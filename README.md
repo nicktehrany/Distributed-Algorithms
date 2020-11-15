@@ -4,9 +4,11 @@ Exercise 1 and 2 for Distributed Algorithms (IN4150), implementing the Schiper-E
 of point-to-point messages.
 
 ## Exercise 1B description:
+
 Implement the Schiper-Eggli-Sandoz algorithm for causal ordering of point-to-point messages with Java/RMI. The implemented program should be truly distributed in that the it can be demonstrated to run across multiple physical machines.
 
 ## Exercise 2B description:
+
 _Implement Suzuki’s and Kasami’s algorithm for mutual exclusion in a distributed system with Java/RMI. The implemented program should be truly distributed in that the it can be demonstrated to run across multiple physical machines. The assignment can be split up into the following three part.
 
 Part 1:
@@ -20,14 +22,5 @@ Include into Component the functionality for sending and receiving the token. It
 that a single designated process initially contains the token. Make sure that the output of the algorithm makes it possible to check its correct operation.
 
 # Build
-To build the .jar file, execute from the current directory,
 
-```bash
-mvn package
-```
-
-To execute the generated .jar file, (TODO CHANGE TO FINAL FUNCTION NAME WHEN DONE)
-
-```bash
-java -cp target/exercise-1b-2.0.jar tudelft.in4150.da.Main
-```
+Build instructions for each exercise are in the respective directory.

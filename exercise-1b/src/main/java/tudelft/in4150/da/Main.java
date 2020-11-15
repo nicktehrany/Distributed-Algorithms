@@ -1,9 +1,14 @@
 package tudelft.in4150.da;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 /**
  * Hello world!
  */
 public final class Main {
+    private static final Logger LOGGER = LogManager.getLogger(Main.class);
+
     private Main() {
     }
 
@@ -12,6 +17,6 @@ public final class Main {
      * @param args The arguments of the program.
      */
     public static void main(String[] args) {
-        System.out.println("Hello World!");
+        LOGGER.debug("Hello World");
     }
 }
