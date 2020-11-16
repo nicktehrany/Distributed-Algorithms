@@ -10,11 +10,11 @@ import org.apache.logging.log4j.Logger;
 
 /**
  * Server class that creates a server instance with the available RMI stub.
- * @return
  */
 public class Server implements DASchiperEggliSandozRMI {
     private static final Logger LOGGER = LogManager.getLogger(Server.class);
     private static final int PORT = 1098;
+    private static final int REG = 1099;
 
     public Server() {
     }
@@ -33,8 +33,7 @@ public class Server implements DASchiperEggliSandozRMI {
     public static void main() {
         try {
             Server obj = new Server();
-            // was 1099 at port???
-            DASchiperEggliSandozRMI stub = (DASchiperEggliSandozRMI) UnicastRemoteObject.exportObject(obj, PORT);
+            DASchiperEggliSandozRMI stub = (DASchiperEggliSandozRMI) UnicastRemoteObject.exportObject(obj, REG);
 
             // Bind the remote object's stub in the registry
             Registry registry = LocateRegistry.createRegistry(PORT);
@@ -46,6 +45,11 @@ public class Server implements DASchiperEggliSandozRMI {
         } catch (AlreadyBoundException e) {
             LOGGER.error("Client unbound exception: " + e.toString());
             e.printStackTrace();
+        }
+
+        // Setup security manager.
+        if (System.getSecurityManager() == null) {
+            System.setSecurityManager(new SecurityManager());
         }
     }
 }

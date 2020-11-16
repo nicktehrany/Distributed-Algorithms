@@ -12,7 +12,7 @@ mvn package
 To execute the generated .jar file,
 
 ```bash
-java -jar target/DA-Schiper-Eggli-Sandoz.jar
+java -Djava.security.policy=java.policy -jar target/DA-Schiper-Eggli-Sandoz.jar
 ```
 
 Part 1:
