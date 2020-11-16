@@ -24,5 +24,5 @@ public final class DASchiperEggliSandozMain {
         LOGGER.info("Call a function as client");
         Client.main();
     }
-
+    
 }

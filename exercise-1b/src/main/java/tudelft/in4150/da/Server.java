@@ -33,7 +33,7 @@ public class Server implements DASchiperEggliSandozRMI {
     public static void main() {
         try {
             Server obj = new Server();
-            // was 1099 at port
+            // was 1099 at port???
             DASchiperEggliSandozRMI stub = (DASchiperEggliSandozRMI) UnicastRemoteObject.exportObject(obj, PORT);
 
             // Bind the remote object's stub in the registry
