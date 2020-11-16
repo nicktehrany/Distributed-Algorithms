@@ -89,9 +89,10 @@
               <addClasspath>true</addClasspath>
               <classpathPrefix>lib/</classpathPrefix>
               <!-- TODO CHANGE MAIN CLASS -->
-              <mainClass>tudelft.in4150.da.Main</mainClass>
+              <mainClass>tudelft.in4150.da.DASchiperEggliSandozMain</mainClass>
             </manifest>
           </archive>
+          <finalName>DA-Schiper-Eggli-Sandoz</finalName>     
         </configuration>
       </plugin>
       <plugin>

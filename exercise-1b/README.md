@@ -12,5 +12,5 @@ mvn package
 To execute the generated .jar file,
 
 ```bash
-java -jar target/exercise-1b-2.0.jar
+java -jar target/DA-Schiper-Eggli-Sandoz.jar
 ```

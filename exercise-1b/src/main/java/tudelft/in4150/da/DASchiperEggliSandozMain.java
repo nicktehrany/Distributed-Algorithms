@@ -6,22 +6,22 @@ import org.apache.logging.log4j.Logger;
 /**
  * Hello world!
  */
-public final class Main {
-    private static final Logger LOGGER = LogManager.getLogger(Main.class);
+public final class DASchiperEggliSandozMain {
+    private static final Logger LOGGER = LogManager.getLogger(DASchiperEggliSandozMain.class);
 
-    private Main() {
+    private DASchiperEggliSandozMain() {
     }
 
     /**
      * Says hello to the world.
-     *
+     * @return
      * @param args The arguments of the program.
      */
     public static void main(String[] args) {
-        System.out.println("Create a server");
+        LOGGER.info("Create a server");
         Server.main();
 
-        System.out.println("Call a function as client");
+        LOGGER.info("Call a function as client");
         Client.main();
     }
 
