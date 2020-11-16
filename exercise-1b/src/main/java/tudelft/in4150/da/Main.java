@@ -14,9 +14,15 @@ public final class Main {
 
     /**
      * Says hello to the world.
+     *
      * @param args The arguments of the program.
      */
     public static void main(String[] args) {
-        LOGGER.debug("Hello World");
+        System.out.println("Create a server");
+        Server.main();
+
+        System.out.println("Call a function as client");
+        Client.main();
     }
+
 }
