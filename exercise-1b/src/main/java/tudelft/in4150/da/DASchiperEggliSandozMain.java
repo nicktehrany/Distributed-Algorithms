@@ -1,6 +1,8 @@
 package tudelft.in4150.da;
 
 import java.rmi.RemoteException;
+import java.util.List;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -10,6 +12,7 @@ import org.apache.logging.log4j.Logger;
 public final class DASchiperEggliSandozMain {
     private static final Logger LOGGER = LogManager.getLogger(DASchiperEggliSandozMain.class);
     private static final int PORT = 1098;
+    private static final int numprocesses = 2;
 
     private DASchiperEggliSandozMain() {
     }
@@ -21,14 +24,14 @@ public final class DASchiperEggliSandozMain {
      */
     public static void main(String[] args) {
 
+        // Init the RMI registery and create processes.
         DASchiperEggliSandoz.initRegistry(PORT);
+        DASchiperEggliSandoz[] processes = DASchiperEggliSandoz.createProcesses(numprocesses, PORT);
 
-        // TODO FOR NOW HARDCODED
+        // Send some messages.
         try {
-            DASchiperEggliSandoz x = new DASchiperEggliSandoz(1, PORT);
-            DASchiperEggliSandoz y = new DASchiperEggliSandoz(2, PORT);
-            x.send(y.getId(), new Message(1, 1, 2));
-            y.send(x.getId(), new Message(2, 2, 1));
+            processes[0].send(processes[1].getId(), new Message(1, 2));
+            processes[1].send(processes[0].getId(), new Message(2, 1));
         } catch (RemoteException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
