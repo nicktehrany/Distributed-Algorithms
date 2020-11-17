@@ -3,7 +3,6 @@ package tudelft.in4150.da;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.rmi.RemoteException;
-
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -32,8 +31,8 @@ class MainTest {
         try {
             DASchiperEggliSandoz x = new DASchiperEggliSandoz(1, PORT);
             DASchiperEggliSandoz y = new DASchiperEggliSandoz(2, PORT);
-            x.send(y.getId(), new Message());
-            y.send(x.getId(), new Message());
+            x.send(y.getId(), new Message(), 0);
+            y.send(x.getId(), new Message(), 0);
         } catch (RemoteException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

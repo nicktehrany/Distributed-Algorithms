@@ -3,19 +3,29 @@ package tudelft.in4150.da;
 import java.io.Serializable;
 import java.util.Arrays;
 
+/**
+ * VectorClock class which is used as the Vector Clock for each of the processes and the timestamps in messages.
+ */
 public class VectorClock implements Serializable {
     /**
      *
      */
     private static final long serialVersionUID = 1L;
-    public int[] clocks;
+    private int[] clocks;
 
+    /**
+     *
+     * @param processes
+     */
     public VectorClock(int processes) {
         clocks = new int[processes];
         Arrays.fill(clocks, 0);
     }
 
-    // Copy Constructor
+    /**
+     *
+     * @param clock
+     */
     public VectorClock(VectorClock clock) {
         clocks = new int[clock.clocks.length];
         for (int i = 0; i < clock.clocks.length; i++) {
@@ -23,6 +33,9 @@ public class VectorClock implements Serializable {
         }
     }
 
+    /**
+     * @return String
+     */
     @Override
     public String toString() {
         String clock = Arrays.toString(clocks);
@@ -30,22 +43,34 @@ public class VectorClock implements Serializable {
         return formattedClock;
     }
 
-	public void incClock(int id) {
+    /**
+     * @param id
+     */
+    public void incClock(int id) {
         clocks[id - 1]++;
-	}
+    }
 
-	public boolean greaterEqual(VectorClock timestamp) {
+    /**
+     * @param timestamp
+     * @return boolean
+     */
+    public boolean greaterEqual(VectorClock timestamp) {
         for (int i = 0; i < clocks.length; i++) {
-            if (clocks[i] < timestamp.clocks[i])
+            if (clocks[i] < timestamp.clocks[i]) {
                 return false;
+            }
         }
-		return true;
-	}
+        return true;
+    }
 
-	public void setMax(VectorClock bufferTimestamp) {
+    /**
+     * @param bufferTimestamp
+     */
+    public void setMax(VectorClock bufferTimestamp) {
         for (int i = 0; i < clocks.length; i++) {
-            if (clocks[i] < bufferTimestamp.clocks[i])
+            if (clocks[i] < bufferTimestamp.clocks[i]) {
                 clocks[i] = bufferTimestamp.clocks[i];
+            }
         }
-	}
+    }
 }

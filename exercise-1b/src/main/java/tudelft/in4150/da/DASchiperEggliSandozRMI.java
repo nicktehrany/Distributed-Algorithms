@@ -10,5 +10,5 @@ import java.rmi.RemoteException;
  */
 public interface DASchiperEggliSandozRMI extends Remote {
 
-    public void receive(int receiver, Message message) throws RemoteException;
+    void receive(int receiver, Message message) throws RemoteException;
 }

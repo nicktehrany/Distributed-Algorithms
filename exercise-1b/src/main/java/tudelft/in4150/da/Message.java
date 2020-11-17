@@ -1,7 +1,6 @@
 package tudelft.in4150.da;
 
 import java.io.Serializable;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -17,32 +16,47 @@ public class Message implements Serializable {
 
     /**
      * Construct a message with a the sender's ID, and the receiver's ID.
-     * @param receiverID
      */
     public Message() {
     }
 
+    /**
+     * @param timestamp
+     */
     public void setTimestamp(VectorClock timestamp) {
         this.timestamp = timestamp;
     }
 
+    /**
+     * @param buffer
+     */
     public void setBuffer(Map<Integer, VectorClock> buffer) {
         this.buffer = buffer;
     }
 
+    /**
+     * @return String
+     */
     @Override
     public String toString() {
-        if (buffer == null)
+        if (buffer == null) {
             return "{" + "- , " +  timestamp + "}";
+        }
 
         return "{" + buffer + ", " + timestamp + "}";
     }
 
-	public VectorClock getTimestamp() {
+    /**
+     * @return VectorClock
+     */
+    public VectorClock getTimestamp() {
         return timestamp;
-	}
+    }
 
-	public Map<Integer, VectorClock> getBuffer() {
+    /**
+     * @return Map<Integer, VectorClock>
+     */
+    public Map<Integer, VectorClock> getBuffer() {
         return buffer;
-	}
+    }
 }
