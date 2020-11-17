@@ -15,6 +15,14 @@ public class VectorClock implements Serializable {
         Arrays.fill(clocks, 0);
     }
 
+    // Copy Constructor
+    public VectorClock(VectorClock clock) {
+        clocks = new int[clock.clocks.length];
+        for (int i = 0; i < clock.clocks.length; i++) {
+            this.clocks[i] = clock.clocks[i];
+        }
+    }
+
     @Override
     public String toString() {
         String clock = Arrays.toString(clocks);

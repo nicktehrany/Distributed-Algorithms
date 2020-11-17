@@ -91,7 +91,7 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
             VectorClock.incClock(ID);
             message.setTimestamp(VectorClock);
             message.setBuffer(Buffer);
-            stub.receive(receiver, message);
+            stub.receive(ID, message);
             addBuffer(receiver);
         } catch (NotBoundException e) {
             // TODO Auto-generated catch block
@@ -102,14 +102,16 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
     }
 
     private void addBuffer(int receiver) {
-        if (Buffer.containsKey(receiver - 1))
-            Buffer.replace(receiver - 1, VectorClock);
+
+        // Using a copy of VectorClock as object is passed by reference into hashmap.
+        if (Buffer.containsKey(receiver))
+            Buffer.replace(receiver, new VectorClock(VectorClock));
         else
-            Buffer.put(receiver - 1, VectorClock);
+            Buffer.put(receiver, new VectorClock(VectorClock));
     }
 
-    public synchronized void receive(int receiver, Message message) throws RemoteException {
-        LOGGER.info(this.ID + " received message " + message.toString() + " from " + receiver);
+    public synchronized void receive(int sender, Message message) throws RemoteException {
+        LOGGER.info(this.ID + " received message " + message.toString() + " from " + sender);
 
         // TODO ALGORITHM IMPLEMENTATION
     }

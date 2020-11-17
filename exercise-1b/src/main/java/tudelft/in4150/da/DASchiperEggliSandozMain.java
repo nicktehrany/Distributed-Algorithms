@@ -31,7 +31,7 @@ public final class DASchiperEggliSandozMain {
         // Send some messages.
         try {
             processes[0].send(processes[1].getId(), new Message(1, 2));
-            processes[1].send(processes[0].getId(), new Message(2, 1));
+            // processes[1].send(processes[0].getId(), new Message(2, 1));
             processes[0].send(processes[1].getId(), new Message(1, 2));
         } catch (RemoteException e) {
             // TODO Auto-generated catch block
