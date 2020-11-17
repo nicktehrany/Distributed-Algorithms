@@ -7,9 +7,6 @@ import java.util.Arrays;
  * VectorClock class which is used as the Vector Clock for each of the processes and the timestamps in messages.
  */
 public class VectorClock implements Serializable {
-    /**
-     *
-     */
     private static final long serialVersionUID = 1L;
     private int[] clocks;
 

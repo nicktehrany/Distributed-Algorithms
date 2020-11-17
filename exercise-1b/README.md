@@ -6,7 +6,7 @@ of point-to-point messages.
 To build the .jar file, execute from the current directory,
 
 ```bash
-mvn package
+mvn clean package
 ```
 
 To execute the generated .jar file,

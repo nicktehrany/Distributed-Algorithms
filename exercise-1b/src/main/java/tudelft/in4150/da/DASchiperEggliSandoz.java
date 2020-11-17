@@ -43,10 +43,10 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
             LOGGER.debug("Binding process " + id + " to port " + port);
             registry.bind("process-" + id, this);
         } catch (RemoteException e) {
-            // TODO Auto-generated catch block
+            LOGGER.error("Remote exception when binding process " + id);
             e.printStackTrace();
         } catch (AlreadyBoundException e) {
-            // TODO Auto-generated catch block
+            LOGGER.error(id + "already bound to registry on port " + port);
             e.printStackTrace();
         }
     }
@@ -87,13 +87,13 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
                 try {
                     thread.join();
                 } catch (InterruptedException e) {
-                    // TODO Auto-generated catch block
+                    LOGGER.error("Interrupted process ");
                     e.printStackTrace();
                 }
                 processes[i] = new DASchiperEggliSandoz(i + 1, port);
                 processes[i].vectorClock = new VectorClock(numProcesses);
             } catch (RemoteException e) {
-                // TODO Auto-generated catch block
+                LOGGER.error("Remote exception creating RMI instance.");
                 e.printStackTrace();
             }
         }
@@ -129,8 +129,7 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
             VectorClock bufferTimestamp = new VectorClock(vectorClock);
             addBuffer(receiver, bufferTimestamp);
         } catch (NotBoundException e) {
-            // TODO Auto-generated catch block
-            LOGGER.error("Unable to locate process-" + receiver);
+            LOGGER.error("Unable to locate process " + receiver);
             e.printStackTrace();
         }
 
@@ -176,10 +175,9 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
     }
 
     /**
-     * Delivery condition met if there does not exist a vector clock of the
-     * receiving process in the message localBuffer, or there exists a vector clock of
-     * the receiving process in the message localBuffer and its local localBuffer >= the clock
-     * in the message localBuffer.
+     * Delivery condition met if there does not exist a vector clock of the receiving process in the message
+     * localBuffer, or there exists a vector clock of the receiving process in the message localBuffer and its local
+     * localBuffer >= the clock in the message localBuffer.
      * @param message
      * @return
      */
