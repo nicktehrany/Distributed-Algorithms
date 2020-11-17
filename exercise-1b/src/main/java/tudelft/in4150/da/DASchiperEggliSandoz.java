@@ -111,7 +111,7 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
 
         if (Buffer.containsKey(id)) {
             VectorClock element = Buffer.get(id);
-            element.setMax(bufferTimestamp); // element is passed by ref, hence no need to place it into hasmap again.
+            element.setMax(bufferTimestamp); // element is used by ref, hence no need to place it into hasmap again.
         }
         else
             Buffer.put(id, bufferTimestamp);
@@ -120,31 +120,46 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
     public synchronized void receive(int sender, Message message) throws RemoteException {
         LOGGER.info(this.ID + " received message " + message.toString() + " from " + sender);
 
-        VectorClock clockCopy = new VectorClock(VectorClock);
-        // Increment sender clock due to send event.
-        clockCopy.incClock(sender);
-        if (clockCopy.greaterEqual(message.getTimestamp())) {
+        if (deliveryCondition(message)) {
             deliver(message);
-            // Check message queue
+            checkMessageBuffer();
         }
-        else
+        else {
+            LOGGER.info("Delivery condition not met, adding message to buffer.");
             MessageBuffer.add(message);
+        }
+    }
 
-        // TODO ALGORITHM IMPLEMENTATION
-        // Compare buffer clock of self to own clock and do according stuff
-        // Check own message buffer after receiving a message to see if message can now be accepted
-        // IF timestamp is larger than own replace own and increment own clock for receive
+    private void checkMessageBuffer() {
+        for (Message message : MessageBuffer) {
+            if (deliveryCondition(message))
+                deliver(message);
+        }
+    }
+
+    /**
+     * Delivery condition met if there does not exist a vector clock of the
+     * receiving process in the message buffer, or there exists a vector clock of
+     * the receiving process in the message buffer and its local buffer >= the clock
+     * in the message buffer.
+     * 
+     * @param message
+     * @return
+     */
+    private boolean deliveryCondition(Message message) {
+        if (!message.getBuffer().containsKey(ID) || VectorClock.greaterEqual(message.getBuffer().get(ID)))
+            return true;
+        return false;
     }
 
     private void deliver(Message message) {
-        LOGGER.info("Delivering message at " + ID);
+        LOGGER.info("Delivery condition met, delivering message to " + ID);
         
         for (Map.Entry<Integer, VectorClock> buffer : message.getBuffer().entrySet()) {
-            if (buffer.getKey()!= ID)
+            if (buffer.getKey() != ID)
                 addBuffer(buffer.getKey(), buffer.getValue());
         }
         
-        LOGGER.info("NEW BUFFER: " + Buffer);
         VectorClock = new VectorClock(message.getTimestamp());
         VectorClock.incClock(ID); // Increase own clock since message was delivered.
     }
