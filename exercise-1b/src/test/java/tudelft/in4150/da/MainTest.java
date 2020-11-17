@@ -17,6 +17,8 @@ class MainTest {
 
         // Setup new out to capture std out from tests.
         System.setOut(new PrintStream(NEWOUT));
+
+        // TODO START TEST SETUP (REGISTERY)
     }
 
     @Test
