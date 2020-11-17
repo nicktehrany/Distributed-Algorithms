@@ -2,6 +2,7 @@ package tudelft.in4150.da;
 
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +31,7 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
         this.ID = pid;
         this.port = port;
         Buffer = new HashMap<Integer, VectorClock>();
+        MessageBuffer = new ArrayList<Message>();
 
         try {
             Registry registry = LocateRegistry.getRegistry(port);
@@ -92,7 +94,11 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
             message.setTimestamp(VectorClock);
             message.setBuffer(Buffer);
             stub.receive(ID, message);
-            addBuffer(receiver);
+
+            // Construct pair of id and timestamp to add to own local buffer.
+            // Using a copy of VectorClock as it is passed by reference into hashmap.
+            VectorClock bufferTimestamp = new VectorClock(VectorClock);
+            addBuffer(receiver, bufferTimestamp);
         } catch (NotBoundException e) {
             // TODO Auto-generated catch block
             LOGGER.error("Unable to locate process-" + receiver);
@@ -101,19 +107,46 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
 
     }
 
-    private void addBuffer(int receiver) {
+    private void addBuffer(int id, VectorClock bufferTimestamp) {
 
-        // Using a copy of VectorClock as object is passed by reference into hashmap.
-        if (Buffer.containsKey(receiver))
-            Buffer.replace(receiver, new VectorClock(VectorClock));
+        if (Buffer.containsKey(id)) {
+            VectorClock element = Buffer.get(id);
+            element.setMax(bufferTimestamp); // element is passed by ref, hence no need to place it into hasmap again.
+        }
         else
-            Buffer.put(receiver, new VectorClock(VectorClock));
+            Buffer.put(id, bufferTimestamp);
     }
 
     public synchronized void receive(int sender, Message message) throws RemoteException {
         LOGGER.info(this.ID + " received message " + message.toString() + " from " + sender);
 
+        VectorClock clockCopy = new VectorClock(VectorClock);
+        // Increment sender clock due to send event.
+        clockCopy.incClock(sender);
+        if (clockCopy.greaterEqual(message.getTimestamp())) {
+            deliver(message);
+            // Check message queue
+        }
+        else
+            MessageBuffer.add(message);
+
         // TODO ALGORITHM IMPLEMENTATION
+        // Compare buffer clock of self to own clock and do according stuff
+        // Check own message buffer after receiving a message to see if message can now be accepted
+        // IF timestamp is larger than own replace own and increment own clock for receive
+    }
+
+    private void deliver(Message message) {
+        LOGGER.info("Delivering message at " + ID);
+        
+        for (Map.Entry<Integer, VectorClock> buffer : message.getBuffer().entrySet()) {
+            if (buffer.getKey()!= ID)
+                addBuffer(buffer.getKey(), buffer.getValue());
+        }
+        
+        LOGGER.info("NEW BUFFER: " + Buffer);
+        VectorClock = new VectorClock(message.getTimestamp());
+        VectorClock.incClock(ID); // Increase own clock since message was delivered.
     }
 
     public int getId() {

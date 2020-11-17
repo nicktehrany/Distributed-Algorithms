@@ -12,8 +12,6 @@ public class Message implements Serializable {
      *
      */
     private static final long serialVersionUID = 1L;
-    private int receiverID;
-    private int senderID;
     private Map<Integer, VectorClock> buffer;
     private VectorClock timestamp;
 
@@ -21,9 +19,7 @@ public class Message implements Serializable {
      * Construct a message with a the sender's ID, and the receiver's ID.
      * @param receiverID
      */
-    public Message(int senderID, int receiverID) {
-        this.senderID = senderID;
-        this.receiverID = receiverID;
+    public Message() {
     }
 
     public void setTimestamp(VectorClock timestamp) {
@@ -37,8 +33,16 @@ public class Message implements Serializable {
     @Override
     public String toString() {
         if (buffer == null)
-            return "{" + senderID + ", " + receiverID + ", " + "- , "+  timestamp + "}";
+            return "{" + "- , " +  timestamp + "}";
 
-        return "{" + senderID + ", " + receiverID + ", " + buffer + ", " + timestamp + "}";
+        return "{" + buffer + ", " + timestamp + "}";
     }
+
+	public VectorClock getTimestamp() {
+        return timestamp;
+	}
+
+	public Map<Integer, VectorClock> getBuffer() {
+        return buffer;
+	}
 }

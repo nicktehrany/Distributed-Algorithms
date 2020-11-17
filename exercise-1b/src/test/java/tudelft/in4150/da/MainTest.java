@@ -32,8 +32,8 @@ class MainTest {
         try {
             DASchiperEggliSandoz x = new DASchiperEggliSandoz(1, PORT);
             DASchiperEggliSandoz y = new DASchiperEggliSandoz(2, PORT);
-            x.send(y.getId(), new Message(1, 2));
-            y.send(x.getId(), new Message(2, 1));
+            x.send(y.getId(), new Message());
+            y.send(x.getId(), new Message());
         } catch (RemoteException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

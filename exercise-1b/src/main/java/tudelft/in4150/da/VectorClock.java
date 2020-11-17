@@ -33,4 +33,19 @@ public class VectorClock implements Serializable {
 	public void incClock(int id) {
         clocks[id - 1]++;
 	}
+
+	public boolean greaterEqual(VectorClock timestamp) {
+        for (int i = 0; i < clocks.length; i++) {
+            if (clocks[i] < timestamp.clocks[i])
+                return false;
+        }
+		return true;
+	}
+
+	public void setMax(VectorClock bufferTimestamp) {
+        for (int i = 0; i < clocks.length; i++) {
+            if (clocks[i] < bufferTimestamp.clocks[i])
+                clocks[i] = bufferTimestamp.clocks[i];
+        }
+	}
 }
