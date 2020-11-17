@@ -14,18 +14,24 @@ public class Message implements Serializable {
      */
     private static final long serialVersionUID = 1L;
     private int receiverID;
-    private VectorClock VectorClock;
+    private int senderID;
+    private VectorClock timestamp;
 
     /**
      * Construct a message with a message ID, the sender's ID, and the receiver's ID.
      * @param receiverID
      */
     public Message(int senderID, int receiverID) {
+        this.senderID = senderID;
         this.receiverID = receiverID;
+    }
+
+    public void setTimestamp(VectorClock timestamp) {
+        this.timestamp = timestamp;
     }
 
     @Override
     public String toString() {
-        return "{" + receiverID + ", " +  VectorClock + "}";
+        return "{" + senderID + ", " + receiverID + ", " +  timestamp + "}";
     }
 }

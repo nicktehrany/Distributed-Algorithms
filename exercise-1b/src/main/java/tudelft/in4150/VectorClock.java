@@ -1,9 +1,24 @@
 package tudelft.in4150;
 
-public class VectorClock {
+import java.io.Serializable;
+import java.util.Arrays;
+
+public class VectorClock implements Serializable {
+    /**
+     *
+     */
+    private static final long serialVersionUID = 1L;
     public int[] clocks;
 
     public VectorClock(int processes) {
-        this.clocks = new int[processes];
+        clocks = new int[processes];
+        Arrays.fill(clocks, 0);
+    }
+
+    @Override
+    public String toString() {
+        String clock = Arrays.toString(clocks);
+        String formattedClock = '{' + clock.substring(1, clock.length() - 1) + '}';
+        return formattedClock;
     }
 }
