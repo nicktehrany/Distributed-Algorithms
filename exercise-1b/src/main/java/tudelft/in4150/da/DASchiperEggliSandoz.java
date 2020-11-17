@@ -49,9 +49,21 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
     }
 
     /**
-     * Main Function ...
+     * Initialize the RMI registry.
+     * @param port Port on which RMI registry is created.
      */
-    public static void main() {
+    public static void initRegistry(int port) {
+        // Setup RMI regisrty
+        try {
+            java.rmi.registry.LocateRegistry.createRegistry(port);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+
+        // Setup security manager.
+        if (System.getSecurityManager() == null) {
+            System.setSecurityManager(new SecurityManager());
+        }
     }
 
     public void send(int receiver, Message message) throws RemoteException {
