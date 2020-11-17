@@ -2,14 +2,12 @@ package tudelft.in4150.da;
 
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import tudelft.in4150.VectorClock;
-
 import java.rmi.AlreadyBoundException;
 import java.rmi.NotBoundException;
 import java.rmi.registry.LocateRegistry;
@@ -25,12 +23,13 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
     private int port;
     private VectorClock VectorClock;
     private List<Message> MessageBuffer;
-    private List<Map<Integer, VectorClock>> LocalBuffer;
+    private Map<Integer, VectorClock> Buffer;
 
     public DASchiperEggliSandoz(int pid, int port) throws RemoteException {
 
         this.ID = pid;
         this.port = port;
+        Buffer = new HashMap<Integer, VectorClock>();
 
         try {
             Registry registry = LocateRegistry.getRegistry(port);
@@ -88,8 +87,12 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
         try {
             DASchiperEggliSandozRMI stub = (DASchiperEggliSandozRMI) registry.lookup("process-" + receiver);
             LOGGER.info(this.ID + " sending message to " + receiver);
+
+            VectorClock.incClock(ID);
             message.setTimestamp(VectorClock);
+            message.setBuffer(Buffer);
             stub.receive(receiver, message);
+            addBuffer(receiver);
         } catch (NotBoundException e) {
             // TODO Auto-generated catch block
             LOGGER.error("Unable to locate process-" + receiver);
@@ -98,9 +101,17 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
 
     }
 
+    private void addBuffer(int receiver) {
+        if (Buffer.containsKey(receiver - 1))
+            Buffer.replace(receiver - 1, VectorClock);
+        else
+            Buffer.put(receiver - 1, VectorClock);
+    }
+
     public synchronized void receive(int receiver, Message message) throws RemoteException {
         LOGGER.info(this.ID + " received message " + message.toString() + " from " + receiver);
 
+        // TODO ALGORITHM IMPLEMENTATION
     }
 
     public int getId() {

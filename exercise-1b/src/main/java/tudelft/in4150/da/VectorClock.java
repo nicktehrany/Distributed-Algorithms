@@ -1,4 +1,4 @@
-package tudelft.in4150;
+package tudelft.in4150.da;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -18,7 +18,11 @@ public class VectorClock implements Serializable {
     @Override
     public String toString() {
         String clock = Arrays.toString(clocks);
-        String formattedClock = '{' + clock.substring(1, clock.length() - 1) + '}';
+        String formattedClock = '(' + clock.substring(1, clock.length() - 1) + ')';
         return formattedClock;
     }
+
+	public void incClock(int id) {
+        clocks[id - 1]++;
+	}
 }
