@@ -13,13 +13,17 @@ public class Message implements Serializable {
     private VectorClock timestamp;
 
     /**
-     * Construct a message
+     * Construct a message.
      */
     public Message(int numProcesses) {
         buffer = new HashMap<Integer, VectorClock>();
         timestamp = new VectorClock(numProcesses);
     }
 
+    /**
+     * Copy constructor.
+     * @param message
+     */
     public Message(Message message) {
         buffer = new HashMap<Integer, VectorClock>();
         buffer.putAll(message.buffer);

@@ -17,7 +17,7 @@ public final class DASchiperEggliSandozMain {
 
     /**
      * Says hello to the world.
-     * 
+     *
      * @return
      * @param args The arguments of the program.
      */
@@ -26,10 +26,11 @@ public final class DASchiperEggliSandozMain {
         // Init the RMI registery and create processes.
         DASchiperEggliSandoz.initRegistry(PORT);
         DASchiperEggliSandoz[] processes = DASchiperEggliSandoz.createProcesses(NUMPROCESSES, PORT);
+        final int delay = 2000;
 
         // Send some messages.
         try {
-            processes[0].send(processes[1].getId(), new Message(NUMPROCESSES), 2000);
+            processes[0].send(processes[1].getId(), new Message(NUMPROCESSES), delay);
             processes[0].send(processes[2].getId(), new Message(NUMPROCESSES), 0);
             processes[2].send(processes[1].getId(), new Message(NUMPROCESSES), 0);
         } catch (RemoteException e) {
@@ -39,7 +40,7 @@ public final class DASchiperEggliSandozMain {
 
         // Sleep until all delays are finished to quit program.
         try {
-            Thread.sleep(2000);
+            Thread.sleep(delay);
         } catch (InterruptedException e) {
             LOGGER.error("Interrupt exception.");
             e.printStackTrace();

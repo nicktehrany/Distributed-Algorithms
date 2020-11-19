@@ -6,17 +6,13 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Timer;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
- * Algorithms main class that implements the RMI interface and provides additonal functionality for bootstraping 
+ * Algorithms main class that implements the RMI interface and provides additonal functionality for bootstraping
  * processes and servers.
  */
 public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchiperEggliSandozRMI, Runnable {
@@ -25,7 +21,7 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
     private int id;
     private int port;
     private VectorClock vectorClock;
-    private final List<Message> messageBuffer;
+    private final Map<Integer, Message> messageBuffer;
     private final Map<Integer, VectorClock> localBuffer;
 
     /**
@@ -39,7 +35,7 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
         this.id = pid;
         this.port = port;
         localBuffer = new HashMap<Integer, VectorClock>();
-        messageBuffer = new ArrayList<Message>();
+        messageBuffer = new HashMap<Integer, Message>();
 
         try {
             Registry registry = LocateRegistry.getRegistry(port);
@@ -157,18 +153,20 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
         LOGGER.info(this.id + " received message " + message.toString() + " from " + sender);
 
         if (deliveryCondition(message)) {
-            deliver(message);
+            deliver(sender, message);
             checkMessageBuffer();
         } else {
             LOGGER.info("Delivery condition not met, adding message to localBuffer.");
-            messageBuffer.add(message);
+            messageBuffer.put(sender, message);
         }
     }
 
     private synchronized void checkMessageBuffer() {
-        for (Message message : messageBuffer) {
+        LOGGER.info("Checking message buffer.");
+        for (Map.Entry<Integer, Message> buffer : messageBuffer.entrySet()) {
+            Message message = buffer.getValue();
             if (deliveryCondition(message)) {
-                deliver(message);
+                deliver(buffer.getKey(), message);
             }
         }
     }
@@ -191,8 +189,8 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
     /**
      * @param message
      */
-    private synchronized void deliver(Message message) {
-        LOGGER.info("Delivery condition met, delivering message to " + id);
+    private synchronized void deliver(int sender, Message message) {
+        LOGGER.info("Delivery condition met, delivering message from sender " + sender + " to " + id);
 
         for (Map.Entry<Integer, VectorClock> buffer : message.getBuffer().entrySet()) {
             if (buffer.getKey() != id) {
@@ -216,6 +214,13 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
         LOGGER.debug("Starting thread");
     }
 
+    /**
+     * Runnable function for thread to deliver delayed message by sleeping delay time before calling rmi function.
+     * @param stub
+     * @param sender
+     * @param message
+     * @param delay
+     */
     public void run(DASchiperEggliSandozRMI stub, int sender, Message message, int delay) {
         LOGGER.debug("Starting Runnable");
 
