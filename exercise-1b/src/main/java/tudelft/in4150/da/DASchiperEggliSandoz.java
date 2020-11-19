@@ -10,20 +10,23 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
- * Server class that creates a server instance with the available RMI stub.
+ * Algorithms main class that implements the RMI interface and provides additonal functionality for bootstraping 
+ * processes and servers.
  */
-public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchiperEggliSandozRMI {
+public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchiperEggliSandozRMI, Runnable {
     private static final long serialVersionUID = 1L;
     private static final Logger LOGGER = LogManager.getLogger(DASchiperEggliSandoz.class);
     private int id;
     private int port;
     private VectorClock vectorClock;
-    private List<Message> messageBuffer;
-    private Map<Integer, VectorClock> localBuffer;
+    private final List<Message> messageBuffer;
+    private final Map<Integer, VectorClock> localBuffer;
 
     /**
      *
@@ -80,16 +83,7 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
 
         for (int i = 0; i < numProcesses; i++) {
             try {
-                Thread thread = new Thread();
-
                 LOGGER.debug("Starting thread for process " + (i + 1));
-                thread.start();
-                try {
-                    thread.join();
-                } catch (InterruptedException e) {
-                    LOGGER.error("Interrupted process ");
-                    e.printStackTrace();
-                }
                 processes[i] = new DASchiperEggliSandoz(i + 1, port);
                 processes[i].vectorClock = new VectorClock(numProcesses);
             } catch (RemoteException e) {
@@ -113,16 +107,19 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
         try {
             DASchiperEggliSandozRMI stub = (DASchiperEggliSandozRMI) registry.lookup("process-" + receiver);
 
-            if (delay == 0) {
-                LOGGER.info(this.id + " sending message to " + receiver);
-            } else {
-                LOGGER.info(this.id + " sending message to " + receiver + " with delay " + delay + "ms");
-            }
 
             vectorClock.incClock(id);
             message.setTimestamp(vectorClock);
             message.setBuffer(localBuffer);
-            stub.receive(id, message);
+
+            if (delay > 0) {
+                LOGGER.info(this.id + " sending message to " + receiver + " with delay " + delay + "ms");
+                Thread thread = new Thread(() -> run(stub, id, message, delay));
+                thread.start();
+            } else {
+                LOGGER.info(this.id + " sending message to " + receiver);
+                stub.receive(id, message);
+            }
 
             // Construct pair of id and timestamp to add to own local localBuffer.
             // Using a copy of VectorClock as it is passed by reference into hashmap.
@@ -132,14 +129,13 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
             LOGGER.error("Unable to locate process " + receiver);
             e.printStackTrace();
         }
-
     }
 
     /**
      * @param processID
      * @param bufferTimestamp
      */
-    private void addBuffer(int processID, VectorClock bufferTimestamp) {
+    private synchronized void addBuffer(int processID, VectorClock bufferTimestamp) {
 
         if (localBuffer.containsKey(processID)) {
             VectorClock element = localBuffer.get(processID);
@@ -166,7 +162,7 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
         }
     }
 
-    private void checkMessageBuffer() {
+    private synchronized void checkMessageBuffer() {
         for (Message message : messageBuffer) {
             if (deliveryCondition(message)) {
                 deliver(message);
@@ -181,7 +177,7 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
      * @param message
      * @return
      */
-    private boolean deliveryCondition(Message message) {
+    private synchronized boolean deliveryCondition(Message message) {
         if (!message.getBuffer().containsKey(id)
             || vectorClock.greaterEqual(message.getBuffer().get(id))) {
             return true;
@@ -192,7 +188,7 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
     /**
      * @param message
      */
-    private void deliver(Message message) {
+    private synchronized void deliver(Message message) {
         LOGGER.info("Delivery condition met, delivering message to " + id);
 
         for (Map.Entry<Integer, VectorClock> buffer : message.getBuffer().entrySet()) {
@@ -208,7 +204,27 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
     /**
      * @return int
      */
-    public int getId() {
+    public synchronized int getId() {
         return this.id;
     }
+
+    @Override
+    public void run() {
+        LOGGER.debug("Starting thread");
+    }
+
+    public void run(DASchiperEggliSandozRMI stub, int sender, Message message, int delay) {
+        LOGGER.debug("Starting Runnable");
+        try {
+            Thread.sleep(delay);
+            stub.receive(sender, message);
+        } catch (InterruptedException e) {
+            LOGGER.error("Interrupted thread during delay simulation.");
+            e.printStackTrace();
+        } catch (RemoteException e) {
+            LOGGER.error("Remote exception when sending message " + message);
+            e.printStackTrace();
+        }
+    }
+
 }

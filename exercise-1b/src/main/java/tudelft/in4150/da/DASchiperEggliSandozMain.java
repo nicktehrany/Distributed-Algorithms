@@ -17,6 +17,7 @@ public final class DASchiperEggliSandozMain {
 
     /**
      * Says hello to the world.
+     * 
      * @return
      * @param args The arguments of the program.
      */
@@ -28,7 +29,7 @@ public final class DASchiperEggliSandozMain {
 
         // Send some messages.
         try {
-            processes[0].send(processes[1].getId(), new Message(), 0);
+            processes[0].send(processes[1].getId(), new Message(), 2000);
             processes[0].send(processes[2].getId(), new Message(), 0);
             processes[2].send(processes[1].getId(), new Message(), 0);
         } catch (RemoteException e) {
@@ -37,6 +38,12 @@ public final class DASchiperEggliSandozMain {
         }
 
         // TODO TEMP
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
         System.exit(0);
     }
 }

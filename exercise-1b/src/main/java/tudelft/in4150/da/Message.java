@@ -7,9 +7,6 @@ import java.util.Map;
  * Message class to construct messages to be passed between processes.
  */
 public class Message implements Serializable {
-    /**
-     *
-     */
     private static final long serialVersionUID = 1L;
     private Map<Integer, VectorClock> buffer;
     private VectorClock timestamp;
