@@ -113,11 +113,14 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
             message.setBuffer(localBuffer);
 
             if (delay > 0) {
-                LOGGER.info(this.id + " sending message to " + receiver + " with delay " + delay + "ms");
-                Thread thread = new Thread(() -> run(stub, id, message, delay));
+                LOGGER.info(this.id + " sending message to " + receiver + " with delay " + delay + "ms " + message);
+
+                // Make copy of message before creating thread to avoid current thread overwriting the contents.
+                Message messageCopy = new Message(message);
+                Thread thread = new Thread(() -> run(stub, id, messageCopy, delay));
                 thread.start();
             } else {
-                LOGGER.info(this.id + " sending message to " + receiver);
+                LOGGER.info(this.id + " sending message to " + receiver + " " + message);
                 stub.receive(id, message);
             }
 
@@ -215,6 +218,7 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
 
     public void run(DASchiperEggliSandozRMI stub, int sender, Message message, int delay) {
         LOGGER.debug("Starting Runnable");
+
         try {
             Thread.sleep(delay);
             stub.receive(sender, message);

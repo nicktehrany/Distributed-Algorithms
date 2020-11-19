@@ -1,6 +1,7 @@
 package tudelft.in4150.da;
 
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -12,9 +13,17 @@ public class Message implements Serializable {
     private VectorClock timestamp;
 
     /**
-     * Construct a message with a the sender's ID, and the receiver's ID.
+     * Construct a message
      */
-    public Message() {
+    public Message(int numProcesses) {
+        buffer = new HashMap<Integer, VectorClock>();
+        timestamp = new VectorClock(numProcesses);
+    }
+
+    public Message(Message message) {
+        buffer = new HashMap<Integer, VectorClock>();
+        buffer.putAll(message.buffer);
+        timestamp = new VectorClock(message.timestamp);
     }
 
     /**
