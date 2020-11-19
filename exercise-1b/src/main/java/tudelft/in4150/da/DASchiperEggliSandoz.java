@@ -109,7 +109,8 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
             message.setBuffer(localBuffer);
 
             if (delay > 0) {
-                LOGGER.info(this.id + " sending message to " + receiver + " with delay " + delay + "ms " + message);
+                LOGGER.info(this.id + " sending message " + message + " to " + receiver + " with delay "
+                    + delay + "ms");
 
                 // Make copy of message before creating thread to avoid current thread overwriting the contents.
                 Message messageCopy = new Message(message);
@@ -236,4 +237,7 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
         }
     }
 
+    public Map<Integer, Message> getMessageBuffer() {
+        return messageBuffer;
+    }
 }

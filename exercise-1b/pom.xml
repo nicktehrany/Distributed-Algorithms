@@ -87,7 +87,6 @@
             <manifest>
               <addClasspath>true</addClasspath>
               <classpathPrefix>lib/</classpathPrefix>
-              <!-- TODO CHANGE MAIN CLASS -->
               <mainClass>tudelft.in4150.da.DASchiperEggliSandozMain</mainClass>
             </manifest>
           </archive>
@@ -148,9 +147,11 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <!-- TODO SKIPPING TESTS FOR NOW -->
         <configuration>
-          <skipTests>true</skipTests>
+          <skipTests>false</skipTests>
+          <reuseForks>false</reuseForks>
+          <runOrder>alphabetical</runOrder>
+          <argLine>-Dlog4j2.configuration=error</argLine>
         </configuration>
         <version>${maven-surefire-plugin.version}</version>
       </plugin>

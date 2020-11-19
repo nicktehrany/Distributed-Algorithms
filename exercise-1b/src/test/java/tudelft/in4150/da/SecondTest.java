@@ -9,11 +9,11 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * First unit tests for Schiper-Eggli-Sandoz algorithm implementation.
+ * Second tests for Schiper-Eggli-Sandoz algorithm implementation.
  * NOTE: process arrays start at index 0 but containsKey() starts at index 1 in assert tests.
  */
 @SuppressWarnings("checkstyle:magicnumber")
-class MainTest {
+public class SecondTest {
     private static final Logger LOGGER = LogManager.getLogger(DASchiperEggliSandoz.class);
     private static final int PORT = 1098;
 
@@ -24,23 +24,26 @@ class MainTest {
     }
 
     /**
-     * Simple test with 2 processes (P1 and P2).
-     * P1 sends m1 -> P2 with delay of 2000ms.
+     * More advanced test with 3 processes (P1, P2, and P3).
+     * P1 sends m1 -> P3 with 2000ms delay.
      * P1 sends m2 -> P2 with no delay.
+     * P2 sends m3 -> P3 with no delay.
      */
     @Test
-    public void simpleTest() {
-        final int numProcesses = 2;
+    public void test() {
+        final int numProcesses = 3;
         final int delay = 2000;
 
         DASchiperEggliSandoz[] processes = DASchiperEggliSandoz.createProcesses(numProcesses, PORT);
 
         try {
-            processes[0].send(processes[1].getId(), new Message(numProcesses), delay);
+            processes[0].send(processes[2].getId(), new Message(numProcesses), delay);
             processes[0].send(processes[1].getId(), new Message(numProcesses), 0);
+            processes[1].send(processes[2].getId(), new Message(numProcesses), 0);
 
-            // P2 should buffer m2 as its missing m1, hence key of P1 exists in messageBuffer.
-            assertTrue(processes[1].getMessageBuffer().containsKey(1));
+            // P3 should buffer m3 as its missing m1, hence key of P2 exists in messageBuffer of P3.
+            assertTrue(processes[2].getMessageBuffer().containsKey(2));
+
         } catch (RemoteException e) {
             LOGGER.error("Remote exception sending messages.");
             e.printStackTrace();

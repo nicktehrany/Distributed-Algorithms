@@ -9,11 +9,11 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * First unit tests for Schiper-Eggli-Sandoz algorithm implementation.
+ * Third tests for Schiper-Eggli-Sandoz algorithm implementation.
  * NOTE: process arrays start at index 0 but containsKey() starts at index 1 in assert tests.
  */
 @SuppressWarnings("checkstyle:magicnumber")
-class MainTest {
+public class ThirdTest {
     private static final Logger LOGGER = LogManager.getLogger(DASchiperEggliSandoz.class);
     private static final int PORT = 1098;
 
@@ -24,23 +24,34 @@ class MainTest {
     }
 
     /**
-     * Simple test with 2 processes (P1 and P2).
-     * P1 sends m1 -> P2 with delay of 2000ms.
-     * P1 sends m2 -> P2 with no delay.
+     * More advanced test with 4 processes (P1, P2, P3, and P4).
+     * P1 sends m1 -> P4 with 2000ms delay.
+     * P1 sends m2 -> P3 with 2000ms delay.
+     * P1 sends m3 -> P2 with no delay.
+     * P2 sends m4 -> P4 with no delay.
+     * P2 sends m5 -> P3 with no delay.
      */
     @Test
-    public void simpleTest() {
-        final int numProcesses = 2;
+    public void testAdvanced() {
+        final int numProcesses = 4;
         final int delay = 2000;
 
         DASchiperEggliSandoz[] processes = DASchiperEggliSandoz.createProcesses(numProcesses, PORT);
 
         try {
-            processes[0].send(processes[1].getId(), new Message(numProcesses), delay);
+            processes[0].send(processes[3].getId(), new Message(numProcesses), delay);
+            processes[0].send(processes[2].getId(), new Message(numProcesses), delay);
             processes[0].send(processes[1].getId(), new Message(numProcesses), 0);
+            processes[1].send(processes[3].getId(), new Message(numProcesses), 0);
 
-            // P2 should buffer m2 as its missing m1, hence key of P1 exists in messageBuffer.
-            assertTrue(processes[1].getMessageBuffer().containsKey(1));
+            // P4 should buffer m4 as its missing m1, hence key of P2 exists in messageBuffer of P4.
+            assertTrue(processes[3].getMessageBuffer().containsKey(2));
+
+            processes[1].send(processes[2].getId(), new Message(numProcesses), 0);
+
+            // P3 should buffer m5 as its missing m2, hence key of P2 exists in messageBuffer of P3.
+            assertTrue(processes[2].getMessageBuffer().containsKey(2));
+
         } catch (RemoteException e) {
             LOGGER.error("Remote exception sending messages.");
             e.printStackTrace();
@@ -48,7 +59,7 @@ class MainTest {
 
         // Sleep until all delays are finished to quit program.
         try {
-            Thread.sleep(delay);
+            Thread.sleep(delay * 2);
         } catch (InterruptedException e) {
             LOGGER.error("Interrupt exception.");
             e.printStackTrace();
