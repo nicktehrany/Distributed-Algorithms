@@ -6,6 +6,7 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -52,8 +53,14 @@ public class ThirdTest {
             // P3 should buffer m5 as its missing m2, hence key of P2 exists in messageBuffer of P3.
             assertTrue(processes[2].getMessageBuffer().containsKey(2));
 
-        } catch (RemoteException e) {
-            LOGGER.error("Remote exception sending messages.");
+            Thread.sleep(delay);
+
+            // After delay, recheck P3 messageBuffer to ensure it deliverd m5 messages after receiving m2.
+            assertFalse(processes[2].getMessageBuffer().containsKey(2));
+
+
+        } catch (RemoteException | InterruptedException e) {
+            LOGGER.error("Exception sending messages.");
             e.printStackTrace();
         }
 

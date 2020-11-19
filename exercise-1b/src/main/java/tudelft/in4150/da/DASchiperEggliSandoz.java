@@ -168,6 +168,7 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
             Message message = buffer.getValue();
             if (deliveryCondition(message)) {
                 deliver(buffer.getKey(), message);
+                messageBuffer.remove(buffer.getKey());
             }
         }
     }
