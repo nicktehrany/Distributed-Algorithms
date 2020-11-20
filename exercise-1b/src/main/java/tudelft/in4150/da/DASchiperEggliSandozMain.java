@@ -5,7 +5,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
- * Main class that creates servers and builds rmi registry.
+ * Main class that creates servers and builds rmi registry using the DASchiperEggliSandoz class.
  */
 public final class DASchiperEggliSandozMain {
     private static final Logger LOGGER = LogManager.getLogger(DASchiperEggliSandoz.class);
@@ -16,7 +16,10 @@ public final class DASchiperEggliSandozMain {
     }
 
     /**
-     * Says hello to the world.
+     * Example execution with 3 processes (P1, P2, and P3).
+     * P1 sends m1 -> P2 with 2000ms delay.
+     * P1 sends m2 -> P3 with no delay.
+     * P3 sends m3 -> P2 with no delay.
      *
      * @return
      * @param args The arguments of the program.

@@ -6,6 +6,7 @@ import java.util.Map;
 
 /**
  * Message class to construct messages to be passed between processes.
+ *
  */
 public class Message implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -14,6 +15,8 @@ public class Message implements Serializable {
 
     /**
      * Construct a message.
+     *
+     * @param numProcesses // Number of total processes needed for VectorClock creation
      */
     public Message(int numProcesses) {
         buffer = new HashMap<Integer, VectorClock>();
@@ -22,6 +25,7 @@ public class Message implements Serializable {
 
     /**
      * Copy constructor.
+     *
      * @param message
      */
     public Message(Message message) {
@@ -31,6 +35,8 @@ public class Message implements Serializable {
     }
 
     /**
+     * Set the timestamp of the message from the provided VectorClock.
+     *
      * @param timestamp
      */
     public void setTimestamp(VectorClock timestamp) {
@@ -38,6 +44,8 @@ public class Message implements Serializable {
     }
 
     /**
+     * Copy the provided buffer from a process into the message buffer.
+     *
      * @param buffer
      */
     public void setBuffer(Map<Integer, VectorClock> buffer) {
@@ -45,6 +53,8 @@ public class Message implements Serializable {
     }
 
     /**
+     * Overriding parent String format for better readibility.
+     *
      * @return String
      */
     @Override
@@ -57,6 +67,8 @@ public class Message implements Serializable {
     }
 
     /**
+     * Provide the timestamp of the message.
+     *
      * @return VectorClock
      */
     public VectorClock getTimestamp() {
@@ -64,6 +76,8 @@ public class Message implements Serializable {
     }
 
     /**
+     * Helper function for unit testing to retrieve messageBuffer and check if messages are indeed buffered.
+     *
      * @return Map<Integer, VectorClock>
      */
     public Map<Integer, VectorClock> getBuffer() {

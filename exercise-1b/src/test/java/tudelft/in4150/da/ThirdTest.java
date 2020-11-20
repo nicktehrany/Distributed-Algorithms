@@ -63,13 +63,5 @@ public class ThirdTest {
             LOGGER.error("Exception sending messages.");
             e.printStackTrace();
         }
-
-        // Sleep until all delays are finished to quit program.
-        try {
-            Thread.sleep(delay * 2);
-        } catch (InterruptedException e) {
-            LOGGER.error("Interrupt exception.");
-            e.printStackTrace();
-        }
     }
 }

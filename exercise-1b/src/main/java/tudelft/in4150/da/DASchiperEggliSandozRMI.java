@@ -6,6 +6,7 @@ import java.rmi.RemoteException;
 /**
  * Remote interface for Remote Method Invocation (RMI) using the Schiper-Eggli-Sandoz algorithm
  * for point to point causal message ordering.
+ *
  * @throws RemoteException
  */
 public interface DASchiperEggliSandozRMI extends Remote {

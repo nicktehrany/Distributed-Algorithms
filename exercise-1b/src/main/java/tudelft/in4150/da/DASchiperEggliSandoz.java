@@ -25,6 +25,7 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
     private final Map<Integer, VectorClock> localBuffer;
 
     /**
+     * Constructor of a single process with an identifier and a port to bind to.
      *
      * @param pid
      * @param port
@@ -70,6 +71,8 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
     }
 
     /**
+     * Creates an array of processes to be used for message exchanging.
+     *
      * @param numProcesses
      * @param port
      * @return DASchiperEggliSandoz[]
@@ -92,6 +95,8 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
     }
 
     /**
+     * Send a message to a receiver over the RMI interface, with or without delay.
+     *
      * @param receiver
      * @param message
      * @param delay
@@ -132,6 +137,8 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
     }
 
     /**
+     * Add a timestamp and associated process identifier to a processes' local buffer.
+     *
      * @param processID
      * @param bufferTimestamp
      */
@@ -146,6 +153,8 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
     }
 
     /**
+     * Implementing the RMI interface function of receiving a message from another process.
+     *
      * @param sender
      * @param message
      * @throws RemoteException
@@ -177,6 +186,7 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
      * Delivery condition met if there does not exist a vector clock of the receiving process in the message
      * localBuffer, or there exists a vector clock of the receiving process in the message localBuffer and its local
      * localBuffer >= the clock in the message localBuffer.
+     *
      * @param message
      * @return
      */
@@ -189,6 +199,8 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
     }
 
     /**
+     * Deliver the actual message by adding the buffer from the message into own and adjusting own VectorClock.
+     *
      * @param message
      */
     private synchronized void deliver(int sender, Message message) {
@@ -205,6 +217,8 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
     }
 
     /**
+     * Helper function to retrieve processes' identifier.
+     *
      * @return int
      */
     public synchronized int getId() {
@@ -218,6 +232,7 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
 
     /**
      * Runnable function for thread to deliver delayed message by sleeping delay time before calling rmi function.
+     *
      * @param stub
      * @param sender
      * @param message
@@ -238,6 +253,11 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
         }
     }
 
+    /**
+     * Helper function to retrieve the messageBuffer for unit testing.
+     *
+     * @return
+     */
     public Map<Integer, Message> getMessageBuffer() {
         return messageBuffer;
     }

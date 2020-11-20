@@ -11,6 +11,7 @@ public class VectorClock implements Serializable {
     private int[] clocks;
 
     /**
+     * VectorClock constructor, initialize clock with 0s on VectroClock construction.
      *
      * @param processes
      */
@@ -20,6 +21,7 @@ public class VectorClock implements Serializable {
     }
 
     /**
+     * VectorClock copy constructor.
      *
      * @param clock
      */
@@ -31,6 +33,8 @@ public class VectorClock implements Serializable {
     }
 
     /**
+     * Format VectorClock to printable String output.
+     *
      * @return String
      */
     @Override
@@ -41,6 +45,8 @@ public class VectorClock implements Serializable {
     }
 
     /**
+     * Increment own VectorClock in event of delivering or sending message.
+     *
      * @param id
      */
     public void incClock(int id) {
@@ -48,6 +54,8 @@ public class VectorClock implements Serializable {
     }
 
     /**
+     * Check if own VectorClock is greater or equal to the timestamp.
+     *
      * @param timestamp
      * @return boolean
      */
@@ -61,6 +69,8 @@ public class VectorClock implements Serializable {
     }
 
     /**
+     * Compare own VectorClock with timestamp and set own clock to maximum values of both clocks.
+     *
      * @param bufferTimestamp
      */
     public void setMax(VectorClock bufferTimestamp) {
