@@ -6,21 +6,27 @@ of point-to-point messages.
 To build the .jar file, execute from the current directory,
 
 ```bash
-mvn package
+mvn clean package -Dmaven.test.skip=true 
 ```
 
+This will skip unit tests, which we implemented using JUnit. To run tests, remove the added flag.
+Note, to run tests in IDEs the tests still need to be compiled with the command above and the flag removed.
+
+The build will generate two .jar files in the target/ directory. One for the logging tool log4j2, which we are using
+to log information on message exchanges between processes, and a second which is the .jar of the actual program.
 To execute the generated .jar file,
 
 ```bash
-java -jar target/DA-Schiper-Eggli-Sandoz.jar
+java -Djava.security.policy=java.policy -jar target/DA-Schiper-Eggli-Sandoz.jar
 ```
 
-Part 1:
-- [ ] Write the remote interface and the global framework of the Component class implementing the components of the distributed algorithm.
-- [ ] In addition, create the framework for the Main class that will create the Component objects and their threads on a single host. It must be possible to specify the number of these components. Include into Main and Component the functionality of registering and looking up components.
+## Program
 
-Part 2:
-- [ ] Include into Component the functionality for broadcasting and receiving messages for requesting the critical section. Include random delays in the critical sections and between finishing one execution of the critical section and requesting access again.
+The program will create a registry on port 1098 and 3 processes (P1, P2, and P3), which are all bound to the registry. 
+Next, processes exchange messages, where first P1 sends a message to P2 with a delay of 2000ms. Then P1 sends a message
+to P3 with no delay, followed by P3 sending a message to P1. P2 receives the message from P3 first, buffers it, as it 
+is missing the message from P1, which it knows from the buffer sent in the message from P3. Once P2 receives the message
+from P1, it gets successfuly delivered and P2 checks its message buffer and delivers the buffered message from P3.
 
-Part 3:
-- [ ] Include into Component the functionality for sending and receiving the token. It can be assumed that a single designated process initially contains the token. Make sure that the output of the algorithm makes it possible to check its correct operation.
+Message delays are implemented by creating a new thread, when a message has a delay. Said thread will then sleep the 
+delay time before sending the message.

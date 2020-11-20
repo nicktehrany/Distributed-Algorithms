@@ -1,17 +1,15 @@
-# Schiper-Eggli-Sandoz Algorithm
+# Distributed-Algorithms IN4150
 
-Exercise 1 and 2 for Distributed Algorithms (IN4150), implementing the Schiper-Eggli-Sandoz algorithm for causal ordering
-of point-to-point messages.
+## Exercise 1B: Schiper-Eggli-Sandoz Algorithm
 
-### Deadline: Friday 27 November
+Point-to-point message exchange with the Schiper-Eggli-Sandoz algorithm to ensure causal ordering on messages.
 
-## Exercise 1B description:
+## Exercise 2B: Suzuki’s and Kasami’s Algorithm
 
-Implement the Schiper-Eggli-Sandoz algorithm for causal ordering of point-to-point messages with Java/RMI. The implemented program should be truly distributed in that the it can be demonstrated to run across multiple physical machines.
-
-## Exercise 2B description:
-Implement Suzuki’s and Kasami’s algorithm for mutual exclusion in a distributed system with Java/RMI. The implemented program should be truly distributed in that the it can be demonstrated to run across multiple physical machines. The assignment can be split up into the following three part.
+## Exercise 3B:
 
 # Build
 
-Build instructions for each exercise are in the respective directory.
+We are utilizing maven as project manegement tool and JUnit for unit testing. Each exercise contains some unit tests, 
+ranging from very simple to more advanced setups. Build instructions for each exercise are in their respective 
+directory.
