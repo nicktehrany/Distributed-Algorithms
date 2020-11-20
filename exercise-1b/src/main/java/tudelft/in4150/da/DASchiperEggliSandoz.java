@@ -39,7 +39,7 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
         messageBuffer = new HashMap<Integer, Message>();
 
         try {
-            Registry registry = LocateRegistry.getRegistry(port);
+            Registry registry = LocateRegistry.getRegistry("localhost", port);
             LOGGER.debug("Binding process " + id + " to port " + port);
             registry.bind("process-" + id, this);
         } catch (RemoteException e) {
