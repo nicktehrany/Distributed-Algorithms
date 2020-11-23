@@ -26,16 +26,24 @@ public final class DASchiperEggliSandozMain {
      */
     public static void main(String[] args) {
 
-        // Init the RMI registery and create processes.
+        // Init the RMI registry and create processes.
         DASchiperEggliSandoz.initRegistry(PORT);
         DASchiperEggliSandoz[] processes = DASchiperEggliSandoz.createProcesses(NUMPROCESSES, PORT);
         final int delay = 2000;
 
         // Send some messages.
         try {
+            // Process 0 will get the token (by default)
             processes[0].send(processes[1].getId(), new Message(NUMPROCESSES), delay);
-            processes[0].send(processes[2].getId(), new Message(NUMPROCESSES), 0);
-            processes[2].send(processes[1].getId(), new Message(NUMPROCESSES), 0);
+
+            // Process 2 requests the token
+            //processes[2].requestToken(NUMPROCESSES, new Message(NUMPROCESSES), 0);
+            //processes[2].wait(2000); //Simulates Mutual Exclusion process
+
+            // Process 3 request the token, but still in use by 2
+            //processes[3].requestToken(NUMPROCESSES, new Message(NUMPROCESSES), 0);
+            //processes[3].wait(2000); //Simulates Mutual Exclusion process
+
         } catch (RemoteException e) {
             LOGGER.error("Remote exception sending messages.");
             e.printStackTrace();

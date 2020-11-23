@@ -6,8 +6,10 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -20,6 +22,8 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
     private static final Logger LOGGER = LogManager.getLogger(DASchiperEggliSandoz.class);
     private int id;
     private int port;
+    private int[] allocation;
+    private boolean token;
     private VectorClock vectorClock;
     private final Map<Integer, Message> messageBuffer;
     private final Map<Integer, VectorClock> localBuffer;
@@ -29,12 +33,15 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
      *
      * @param pid
      * @param port
+     * @param allocation
+     * @param token
      * @throws RemoteException
      */
-    public DASchiperEggliSandoz(int pid, int port) throws RemoteException {
-
+    public DASchiperEggliSandoz(int pid, int port, int[] allocation, boolean token) throws RemoteException {
         this.id = pid;
         this.port = port;
+        this.allocation = allocation;
+        this.token = token;
         localBuffer = new HashMap<Integer, VectorClock>();
         messageBuffer = new HashMap<Integer, Message>();
 
@@ -57,9 +64,9 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
      * @param port Port on which RMI registry is created.
      */
     public static void initRegistry(int port) {
-        // Setup RMI regisrty
+        // Setup RMI registry
         try {
-            LocateRegistry.createRegistry(port);
+            java.rmi.registry.LocateRegistry.createRegistry(port);
         } catch (RemoteException e) {
             e.printStackTrace();
         }
@@ -80,10 +87,17 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
     public static DASchiperEggliSandoz[] createProcesses(int numProcesses, int port) {
         DASchiperEggliSandoz[] processes = new DASchiperEggliSandoz[numProcesses];
 
+        int[] allocation = new int[numProcesses];
+        Arrays.fill(allocation, 0);
+
         for (int i = 0; i < numProcesses; i++) {
             try {
                 LOGGER.debug("Starting thread for process " + (i + 1));
-                processes[i] = new DASchiperEggliSandoz(i + 1, port);
+                if (i == 0) {
+                    processes[i] = new DASchiperEggliSandoz(i + 1, port, allocation, true);
+                } else {
+                    processes[i] = new DASchiperEggliSandoz(i + 1, port, allocation, false);
+                }
                 processes[i].vectorClock = new VectorClock(numProcesses);
             } catch (RemoteException e) {
                 LOGGER.error("Remote exception creating RMI instance.");
@@ -108,6 +122,57 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
         try {
             DASchiperEggliSandozRMI stub = (DASchiperEggliSandozRMI) registry.lookup("process-" + receiver);
 
+            vectorClock.incClock(id);
+            message.setTimestamp(vectorClock);
+            message.setBuffer(localBuffer);
+
+            if (delay > 0) {
+                LOGGER.info(this.id + " sending message " + message + " to " + receiver + " with delay "
+                    + delay + "ms");
+
+                // Make copy of message before creating thread to avoid current thread overwriting the contents.
+                Message messageCopy = new Message(message);
+                Thread thread = new Thread(() -> run(stub, id, messageCopy, delay));
+                thread.start();
+            } else {
+                LOGGER.info(this.id + " sending message to " + receiver + " " + message);
+                stub.receive(id, message);
+            }
+
+            // Construct pair of id and timestamp to add to own local localBuffer.
+            // Using a copy of VectorClock as it is passed by reference into hashmap.
+            VectorClock bufferTimestamp = new VectorClock(vectorClock);
+            addBuffer(receiver, bufferTimestamp);
+        } catch (NotBoundException e) {
+            LOGGER.error("Unable to locate process " + receiver);
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Request the token at all other points via the RMI interface, with or without delay.
+     *
+     * @param receiver
+     * @param message
+     * @param delay
+     * @throws RemoteException
+     */
+    public synchronized void requestToken(int receiver, Message message, int delay) throws RemoteException {
+        // No need to request token if already in possesion by thread
+        if (this.token) {
+            return;
+        }
+
+        Registry registry = LocateRegistry.getRegistry(port);
+
+        try {
+            // Increment sequence number
+            int curValue = this.allocation[this.id];
+            this.allocation[this.id] = curValue++;
+
+            //TODO: HERE A LOOP TO CALL ALL OTHER POINTS
+
+            DASchiperEggliSandozRMI stub = (DASchiperEggliSandozRMI) registry.lookup("process-" + receiver);
 
             vectorClock.incClock(id);
             message.setTimestamp(vectorClock);
@@ -116,6 +181,7 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
             if (delay > 0) {
                 LOGGER.info(this.id + " sending message " + message + " to " + receiver + " with delay "
                     + delay + "ms");
+                LOGGER.info(this.id + " allocation array: " + Arrays.toString(this.allocation));
 
                 // Make copy of message before creating thread to avoid current thread overwriting the contents.
                 Message messageCopy = new Message(message);
@@ -161,6 +227,38 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
      */
     public synchronized void receive(int sender, Message message) throws RemoteException {
         LOGGER.info(this.id + " received message " + message.toString() + " from " + sender);
+
+        if (deliveryCondition(message)) {
+            deliver(sender, message);
+            checkMessageBuffer();
+        } else {
+            LOGGER.info("Delivery condition not met, adding message to localBuffer.");
+            messageBuffer.put(sender, message);
+        }
+    }
+
+    /**
+     * Implementing the RMI interface function of receiving a token request from another process.
+     *
+     * @param sender
+     * @param message
+     * @throws RemoteException
+     */
+    public synchronized void sendToken(int sender, Message message) throws RemoteException {
+        LOGGER.info(this.id + " received token request from " + sender);
+
+        //TODO: message should contain new token value as newValue
+        int newValue = 1;
+
+        // Update allocation array
+        if (this.allocation[sender] < newValue) {
+            this.allocation[sender] = newValue;
+        } else {
+            // No token will be send since request is not accepted
+            return;
+        }
+
+        LOGGER.info(this.id + " allocation array: " + Arrays.toString(this.allocation));
 
         if (deliveryCondition(message)) {
             deliver(sender, message);
