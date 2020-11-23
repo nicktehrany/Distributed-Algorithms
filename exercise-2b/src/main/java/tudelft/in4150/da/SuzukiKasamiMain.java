@@ -17,9 +17,9 @@ import org.apache.logging.log4j.Logger;
  * Algorithms main class that implements the RMI interface and provides additonal functionality for bootstraping
  * processes and servers.
  */
-public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchiperEggliSandozRMI, Runnable {
+public class SuzukiKasamiMain extends UnicastRemoteObject implements SuzukiKasamiRMI, Runnable {
     private static final long serialVersionUID = 1L;
-    private static final Logger LOGGER = LogManager.getLogger(DASchiperEggliSandoz.class);
+    private static final Logger LOGGER = LogManager.getLogger(SuzukiKasamiMain.class);
     private int id;
     private int port;
     private int[] allocation;
@@ -37,7 +37,7 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
      * @param token
      * @throws RemoteException
      */
-    public DASchiperEggliSandoz(int pid, int port, int[] allocation, boolean token) throws RemoteException {
+    public SuzukiKasamiMain(int pid, int port, int[] allocation, boolean token) throws RemoteException {
         this.id = pid;
         this.port = port;
         this.allocation = allocation;
@@ -84,8 +84,8 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
      * @param port
      * @return DASchiperEggliSandoz[]
      */
-    public static DASchiperEggliSandoz[] createProcesses(int numProcesses, int port) {
-        DASchiperEggliSandoz[] processes = new DASchiperEggliSandoz[numProcesses];
+    public static SuzukiKasamiMain[] createProcesses(int numProcesses, int port) {
+        SuzukiKasamiMain[] processes = new SuzukiKasamiMain[numProcesses];
 
         int[] allocation = new int[numProcesses];
         Arrays.fill(allocation, 0);
@@ -94,9 +94,9 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
             try {
                 LOGGER.debug("Starting thread for process " + (i + 1));
                 if (i == 0) {
-                    processes[i] = new DASchiperEggliSandoz(i + 1, port, allocation, true);
+                    processes[i] = new SuzukiKasamiMain(i + 1, port, allocation, true);
                 } else {
-                    processes[i] = new DASchiperEggliSandoz(i + 1, port, allocation, false);
+                    processes[i] = new SuzukiKasamiMain(i + 1, port, allocation, false);
                 }
                 processes[i].vectorClock = new VectorClock(numProcesses);
             } catch (RemoteException e) {
@@ -120,7 +120,7 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
         Registry registry = LocateRegistry.getRegistry(port);
 
         try {
-            DASchiperEggliSandozRMI stub = (DASchiperEggliSandozRMI) registry.lookup("process-" + receiver);
+            SuzukiKasamiRMI stub = (SuzukiKasamiRMI) registry.lookup("process-" + receiver);
 
             vectorClock.incClock(id);
             message.setTimestamp(vectorClock);
@@ -172,7 +172,7 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
 
             //TODO: HERE A LOOP TO CALL ALL OTHER POINTS
 
-            DASchiperEggliSandozRMI stub = (DASchiperEggliSandozRMI) registry.lookup("process-" + receiver);
+            SuzukiKasamiRMI stub = (SuzukiKasamiRMI) registry.lookup("process-" + receiver);
 
             vectorClock.incClock(id);
             message.setTimestamp(vectorClock);
@@ -261,6 +261,12 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
         LOGGER.info(this.id + " allocation array: " + Arrays.toString(this.allocation));
 
         if (deliveryCondition(message)) {
+
+            if (this.token) {
+                //return message with token
+                this.token = false;
+            }
+
             deliver(sender, message);
             checkMessageBuffer();
         } else {
@@ -336,7 +342,7 @@ public class DASchiperEggliSandoz extends UnicastRemoteObject implements DASchip
      * @param message
      * @param delay
      */
-    public void run(DASchiperEggliSandozRMI stub, int sender, Message message, int delay) {
+    public void run(SuzukiKasamiRMI stub, int sender, Message message, int delay) {
         LOGGER.debug("Starting Runnable");
 
         try {
