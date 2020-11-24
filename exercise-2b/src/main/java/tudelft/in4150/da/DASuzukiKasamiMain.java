@@ -1,6 +1,8 @@
 package tudelft.in4150.da;
 
 import java.rmi.RemoteException;
+import java.util.Arrays;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -27,16 +29,24 @@ public final class DASuzukiKasamiMain {
     public static void main(String[] args) {
 
         // Init the RMI registry and create processes.
-        // SuzukiKasami.initRegistry(PORT);
-        // SuzukiKasami[] processes = SuzukiKasami.createProcesses(NUMPROCESSES, PORT);
         final int delay = 2000;
-        int[] x = new int [2];
+        int[] allocation = new int [3];
+        Arrays.fill(allocation, 0);
+
+        //TODO: INIT REGISTRY
+
         try {
-            Process p = new Process();
-            p.requestToken();
-            Process p2 = new Process();
+            Process p1 = new Process(PORT, true, allocation);
+            Process p2 = new Process(PORT, false, allocation);
+            Process p3 = new Process(PORT, false, allocation);
+
+            p3.requestToken();
+            p3.wait(2000); // Emulate critical section
+
             p2.requestToken();
-        } catch (RemoteException e1) {
+
+
+        } catch (RemoteException | InterruptedException e1) {
             // TODO Auto-generated catch block
             e1.printStackTrace();
         }
