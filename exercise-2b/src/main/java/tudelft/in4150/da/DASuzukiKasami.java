@@ -9,17 +9,16 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
- * Algorithms main class that implements the RMI interface and provides additonal functionality for bootstraping
- * processes and servers.
+ * Algorithms main class that implements the RMI interface and provides
+ * additonal functionality for bootstraping processes and servers.
  */
-public class SuzukiKasamiMain extends UnicastRemoteObject implements SuzukiKasamiRMI, Runnable {
+public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasamiRMI, Runnable {
     private static final long serialVersionUID = 1L;
-    private static final Logger LOGGER = LogManager.getLogger(SuzukiKasamiMain.class);
+    private static final Logger LOGGER = LogManager.getLogger(DASuzukiKasami.class);
     private int id;
     private int port;
     private int[] allocation;
@@ -37,7 +36,7 @@ public class SuzukiKasamiMain extends UnicastRemoteObject implements SuzukiKasam
      * @param token
      * @throws RemoteException
      */
-    public SuzukiKasamiMain(int pid, int port, int[] allocation, boolean token) throws RemoteException {
+    public DASuzukiKasami(int pid, int port, int[] allocation, boolean token) throws RemoteException {
         this.id = pid;
         this.port = port;
         this.allocation = allocation;
@@ -45,17 +44,17 @@ public class SuzukiKasamiMain extends UnicastRemoteObject implements SuzukiKasam
         localBuffer = new HashMap<Integer, VectorClock>();
         messageBuffer = new HashMap<Integer, Message>();
 
-        try {
-            Registry registry = LocateRegistry.getRegistry("localhost", port);
-            LOGGER.debug("Binding process " + id + " to port " + port);
-            registry.bind("process-" + id, this);
-        } catch (RemoteException e) {
-            LOGGER.error("Remote exception when binding process " + id);
-            e.printStackTrace();
-        } catch (AlreadyBoundException e) {
-            LOGGER.error(id + "already bound to registry on port " + port);
-            e.printStackTrace();
-        }
+        // try {
+        // Registry registry = LocateRegistry.getRegistry("localhost", port);
+        // LOGGER.debug("Binding process " + id + " to port " + port);
+        // registry.bind("process-" + id, this);
+        // } catch (RemoteException e) {
+        // LOGGER.error("Remote exception when binding process " + id);
+        // e.printStackTrace();
+        // } catch (AlreadyBoundException e) {
+        // LOGGER.error(id + "already bound to registry on port " + port);
+        // e.printStackTrace();
+        // }
     }
 
     /**
@@ -84,8 +83,8 @@ public class SuzukiKasamiMain extends UnicastRemoteObject implements SuzukiKasam
      * @param port
      * @return DASchiperEggliSandoz[]
      */
-    public static SuzukiKasamiMain[] createProcesses(int numProcesses, int port) {
-        SuzukiKasamiMain[] processes = new SuzukiKasamiMain[numProcesses];
+    public static DASuzukiKasami[] createProcesses(int numProcesses, int port) {
+        DASuzukiKasami[] processes = new DASuzukiKasami[numProcesses];
 
         int[] allocation = new int[numProcesses];
         Arrays.fill(allocation, 0);
@@ -94,9 +93,9 @@ public class SuzukiKasamiMain extends UnicastRemoteObject implements SuzukiKasam
             try {
                 LOGGER.debug("Starting thread for process " + (i + 1));
                 if (i == 0) {
-                    processes[i] = new SuzukiKasamiMain(i + 1, port, allocation, true);
+                    processes[i] = new DASuzukiKasami(i + 1, port, allocation, true);
                 } else {
-                    processes[i] = new SuzukiKasamiMain(i + 1, port, allocation, false);
+                    processes[i] = new DASuzukiKasami(i + 1, port, allocation, false);
                 }
                 processes[i].vectorClock = new VectorClock(numProcesses);
             } catch (RemoteException e) {
@@ -120,17 +119,18 @@ public class SuzukiKasamiMain extends UnicastRemoteObject implements SuzukiKasam
         Registry registry = LocateRegistry.getRegistry(port);
 
         try {
-            SuzukiKasamiRMI stub = (SuzukiKasamiRMI) registry.lookup("process-" + receiver);
+            DASuzukiKasamiRMI stub = (DASuzukiKasamiRMI) registry.lookup("process-" + receiver);
 
             vectorClock.incClock(id);
             message.setTimestamp(vectorClock);
             message.setBuffer(localBuffer);
 
             if (delay > 0) {
-                LOGGER.info(this.id + " sending message " + message + " to " + receiver + " with delay "
-                    + delay + "ms");
+                LOGGER.info(
+                        this.id + " sending message " + message + " to " + receiver + " with delay " + delay + "ms");
 
-                // Make copy of message before creating thread to avoid current thread overwriting the contents.
+                // Make copy of message before creating thread to avoid current thread
+                // overwriting the contents.
                 Message messageCopy = new Message(message);
                 Thread thread = new Thread(() -> run(stub, id, messageCopy, delay));
                 thread.start();
@@ -150,7 +150,8 @@ public class SuzukiKasamiMain extends UnicastRemoteObject implements SuzukiKasam
     }
 
     /**
-     * Request the token at all other points via the RMI interface, with or without delay.
+     * Request the token at all other points via the RMI interface, with or without
+     * delay.
      *
      * @param receiver
      * @param message
@@ -170,20 +171,21 @@ public class SuzukiKasamiMain extends UnicastRemoteObject implements SuzukiKasam
             int curValue = this.allocation[this.id];
             this.allocation[this.id] = curValue++;
 
-            //TODO: HERE A LOOP TO CALL ALL OTHER POINTS
+            // TODO: HERE A LOOP TO CALL ALL OTHER POINTS
 
-            SuzukiKasamiRMI stub = (SuzukiKasamiRMI) registry.lookup("process-" + receiver);
+            DASuzukiKasamiRMI stub = (DASuzukiKasamiRMI) registry.lookup("process-" + receiver);
 
             vectorClock.incClock(id);
             message.setTimestamp(vectorClock);
             message.setBuffer(localBuffer);
 
             if (delay > 0) {
-                LOGGER.info(this.id + " sending message " + message + " to " + receiver + " with delay "
-                    + delay + "ms");
+                LOGGER.info(
+                        this.id + " sending message " + message + " to " + receiver + " with delay " + delay + "ms");
                 LOGGER.info(this.id + " allocation array: " + Arrays.toString(this.allocation));
 
-                // Make copy of message before creating thread to avoid current thread overwriting the contents.
+                // Make copy of message before creating thread to avoid current thread
+                // overwriting the contents.
                 Message messageCopy = new Message(message);
                 Thread thread = new Thread(() -> run(stub, id, messageCopy, delay));
                 thread.start();
@@ -203,7 +205,8 @@ public class SuzukiKasamiMain extends UnicastRemoteObject implements SuzukiKasam
     }
 
     /**
-     * Add a timestamp and associated process identifier to a processes' local buffer.
+     * Add a timestamp and associated process identifier to a processes' local
+     * buffer.
      *
      * @param processID
      * @param bufferTimestamp
@@ -219,7 +222,8 @@ public class SuzukiKasamiMain extends UnicastRemoteObject implements SuzukiKasam
     }
 
     /**
-     * Implementing the RMI interface function of receiving a message from another process.
+     * Implementing the RMI interface function of receiving a message from another
+     * process.
      *
      * @param sender
      * @param message
@@ -238,7 +242,8 @@ public class SuzukiKasamiMain extends UnicastRemoteObject implements SuzukiKasam
     }
 
     /**
-     * Implementing the RMI interface function of receiving a token request from another process.
+     * Implementing the RMI interface function of receiving a token request from
+     * another process.
      *
      * @param sender
      * @param message
@@ -247,7 +252,7 @@ public class SuzukiKasamiMain extends UnicastRemoteObject implements SuzukiKasam
     public synchronized void sendToken(int sender, Message message) throws RemoteException {
         LOGGER.info(this.id + " received token request from " + sender);
 
-        //TODO: message should contain new token value as newValue
+        // TODO: message should contain new token value as newValue
         int newValue = 1;
 
         // Update allocation array
@@ -263,7 +268,7 @@ public class SuzukiKasamiMain extends UnicastRemoteObject implements SuzukiKasam
         if (deliveryCondition(message)) {
 
             if (this.token) {
-                //return message with token
+                // return message with token
                 this.token = false;
             }
 
@@ -287,23 +292,24 @@ public class SuzukiKasamiMain extends UnicastRemoteObject implements SuzukiKasam
     }
 
     /**
-     * Delivery condition met if there does not exist a vector clock of the receiving process in the message
-     * localBuffer, or there exists a vector clock of the receiving process in the message localBuffer and its local
-     * localBuffer >= the clock in the message localBuffer.
+     * Delivery condition met if there does not exist a vector clock of the
+     * receiving process in the message localBuffer, or there exists a vector clock
+     * of the receiving process in the message localBuffer and its local localBuffer
+     * >= the clock in the message localBuffer.
      *
      * @param message
      * @return
      */
     private synchronized boolean deliveryCondition(Message message) {
-        if (!message.getBuffer().containsKey(id)
-            || vectorClock.greaterEqual(message.getBuffer().get(id))) {
+        if (!message.getBuffer().containsKey(id) || vectorClock.greaterEqual(message.getBuffer().get(id))) {
             return true;
         }
         return false;
     }
 
     /**
-     * Deliver the actual message by adding the buffer from the message into own and adjusting own VectorClock.
+     * Deliver the actual message by adding the buffer from the message into own and
+     * adjusting own VectorClock.
      *
      * @param message
      */
@@ -331,7 +337,13 @@ public class SuzukiKasamiMain extends UnicastRemoteObject implements SuzukiKasam
 
     @Override
     public void run() {
-        LOGGER.debug("Starting thread");
+        LOGGER.debug("Starting thread " + this.id);
+        try {
+            java.lang.Thread.currentThread().join();
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -342,7 +354,7 @@ public class SuzukiKasamiMain extends UnicastRemoteObject implements SuzukiKasam
      * @param message
      * @param delay
      */
-    public void run(SuzukiKasamiRMI stub, int sender, Message message, int delay) {
+    public void run(DASuzukiKasamiRMI stub, int sender, Message message, int delay) {
         LOGGER.debug("Starting Runnable");
 
         try {

@@ -9,7 +9,7 @@ import java.rmi.RemoteException;
  *
  * @throws RemoteException
  */
-public interface DASchiperEggliSandozRMI extends Remote {
+public interface DASuzukiKasamiRMI extends Remote {
 
     void receive(int receiver, Message message) throws RemoteException;
 }
