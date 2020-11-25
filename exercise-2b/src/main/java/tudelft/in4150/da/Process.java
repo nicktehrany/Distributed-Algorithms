@@ -19,24 +19,18 @@ public class Process {
         this.pid = Math.abs(rand.nextInt());
         LOGGER.debug("Starting thread " + pid);
         executor = Executors.newSingleThreadExecutor();
-        instance = new DASuzukiKasami(ip, pid, port);
+        instance = new DASuzukiKasami(ip, pid, port, executor);
         instance.assignToken();
     }
 
-    // PROVIDE INTERFACE FOR MAIN LIKE THIS
+    // Request the token for the Critical Section.
     public void requestCS() {
-        instance.requestCS(this.pid);
-        // try {
-        //     String[] x= LocateRegistry.getRegistry(port).list();
-        //     for (String b: x) {
-        //         LOGGER.info(b);
-        //     }
-        // } catch (RemoteException e) {
-        //     // TODO Auto-generated catch block
-        //     e.printStackTrace();
-        // }
-        // instance.requestToken(receiver, message, delay);
-        LOGGER.info(instance.toString());
+        executor.submit(new Runnable() {
+            @Override
+            public void run() {
+                instance.requestCS();
+            }
+        });
     }
 
     /**

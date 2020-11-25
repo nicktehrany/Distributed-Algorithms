@@ -6,6 +6,8 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.ExportException;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.concurrent.ExecutorService;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -21,8 +23,9 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
     private int port;
     private boolean holdsToken = false;
     private int pid;
+    private ExecutorService executor;
 
-    public DASuzukiKasami(String ip, int pid, int port) throws RemoteException {
+    public DASuzukiKasami(String ip, int pid, int port, ExecutorService executor) throws RemoteException {
         try {
             Registry registry = LocateRegistry.getRegistry(ip, port);
             LOGGER.debug("Binding process " + pid + " to port " + port);
@@ -39,6 +42,7 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
         this.ip = ip;
         this.port = port;
         this.pid = pid;
+        this.executor = executor;
     }
     
     /**
@@ -80,12 +84,31 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
 
     }
 
-	public void requestCS(int pid) {
+	public void requestCS() {
+        LOGGER.info(this.pid + " requesting CS");
 
+        if (holdsToken) {
+            enterCS();
+        } else {
+            try {
+                String[] registeredProcesses = LocateRegistry.getRegistry(port).list();
+                for (String process: registeredProcesses) {
+                    LOGGER.info("requesting from " + process); // TODO send broadcast to all
+                }
+            } catch (RemoteException e) {
+                LOGGER.error("Remote Exception");
+                e.printStackTrace();
+            }
+        }
 	}
 
+    private void enterCS() {
+        LOGGER.info("Entering CS");
+    }
+
     /**
-     * Each process checks if it is first in the rmi registry list and if so gets assigned the token.
+     * Each process checks if it is first in the rmi registry list and if so gets
+     * assigned the token.
      */
 	public void assignToken() {
         try {

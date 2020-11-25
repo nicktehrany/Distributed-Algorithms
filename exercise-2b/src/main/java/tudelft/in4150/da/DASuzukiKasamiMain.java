@@ -1,8 +1,6 @@
 package tudelft.in4150.da;
 
-import java.lang.management.ManagementFactory;
 import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
 import java.util.Random;
 
 import org.apache.logging.log4j.LogManager;
@@ -10,7 +8,7 @@ import org.apache.logging.log4j.Logger;
 
 /**
  * Main class that creates servers and builds rmi registry using the
- * DASchiperEggliSandoz class.
+ * DASuzukiKasamiMain class.
  */
 public final class DASuzukiKasamiMain {
     private static final Logger LOGGER = LogManager.getLogger(DASuzukiKasamiMain.class);
@@ -50,16 +48,24 @@ public final class DASuzukiKasamiMain {
             }
         }
 
-        // TODO SLEEP 10s, wait for other servers
+        // Sleep 5s, waiting for other to bind to the registry before starting to send messages.
         try {
-            LOGGER.info("Sleeping for 10 seconds to wait for others to bind processes to rmi");
-            Thread.sleep(10000);
+            LOGGER.info("Waiting 5s for other processes to bind to rmi");
+            Thread.sleep(5000);
         } catch (InterruptedException e1) {
             LOGGER.error("Interrupted Exception");
             e1.printStackTrace();
         }
 
-        // TODO if initialized clean up registry
+
+        Random rand = new Random(System.currentTimeMillis());
+        int index = Math.abs(rand.nextInt()) % numProcesses;
+
+        // TODO TEMP add some random time delay between requests
+        if (initialized == 1)
+            localProcesses[index].requestCS();
+
+        // TODO if (initialized == 1) clean up registry
 
         // System.exit(0);
     }

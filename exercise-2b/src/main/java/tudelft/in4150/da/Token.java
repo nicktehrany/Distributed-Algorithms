@@ -4,14 +4,14 @@ import java.io.Serializable;
 import java.util.Arrays;
 
 /**
- * VectorClock class which is used as the Vector Clock for each of the processes and the timestamps in messages.
+ * Token class which is used as the Vector Clock for each of the processes and the timestamps in messages.
  */
 public class Token implements Serializable {
     private static final long serialVersionUID = 1L;
     private int[] clocks;
 
     /**
-     * VectorClock constructor, initialize clock with 0s on VectroClock construction.
+     * Token constructor, initialize clock with 0s on VectroClock construction.
      *
      * @param processes
      */
@@ -21,7 +21,7 @@ public class Token implements Serializable {
     }
 
     /**
-     * VectorClock copy constructor.
+     * Token copy constructor.
      *
      * @param clock
      */
@@ -33,7 +33,7 @@ public class Token implements Serializable {
     }
 
     /**
-     * Format VectorClock to printable String output.
+     * Format Token to printable String output.
      *
      * @return String
      */
@@ -45,7 +45,7 @@ public class Token implements Serializable {
     }
 
     /**
-     * Increment own VectorClock in event of delivering or sending message.
+     * Increment own Token in event of delivering or sending message.
      *
      * @param id
      */
@@ -54,7 +54,7 @@ public class Token implements Serializable {
     }
 
     /**
-     * Check if own VectorClock is greater or equal to the timestamp.
+     * Check if own Token is greater or equal to the timestamp.
      *
      * @param timestamp
      * @return boolean
@@ -69,7 +69,7 @@ public class Token implements Serializable {
     }
 
     /**
-     * Compare own VectorClock with timestamp and set own clock to maximum values of both clocks.
+     * Compare own Token with timestamp and set own clock to maximum values of both clocks.
      *
      * @param bufferTimestamp
      */
