@@ -42,6 +42,15 @@ public class Token implements Serializable {
     }
 
     /**
+     * Set the token satisfied request counter.
+     * @param index
+     * @param value
+     */
+    public void setValue(int index, int value) {
+        LN[index] = value;
+    }
+
+    /**
      * 
      */
     @Override

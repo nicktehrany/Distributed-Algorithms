@@ -27,6 +27,7 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
     private String rmiBind = "rmi:://";
     private int[] requestNumbers;
     private Token token = null;
+    private int numprocesses = 0;
 
     public DASuzukiKasami(String ip, int port, ExecutorService executor) throws RemoteException {
         try {
@@ -89,15 +90,16 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
 
         requestNumbers[this.pid]++;
 
-        // if (holdsToken) { // IS THIS CORRECT? NOT SENDING A REQUEST?
-        //     enterCS();
-        // } else {
         try {
             Registry registry = LocateRegistry.getRegistry(ip, port);
             String[] registeredProcesses = registry.list();
             for (String process : registeredProcesses) {
                 DASuzukiKasamiRMI stub = (DASuzukiKasamiRMI) registry.lookup(process);
-                stub.receiveRequest(this.pid, requestNumbers[this.pid]);
+
+                // Don't send request to yourself.
+                if (!process.contains("process-" + pid)) {
+                    stub.receiveRequest(this.pid, requestNumbers[this.pid]);
+                }
             }
         } catch (RemoteException e) {
             LOGGER.error("Remote Exception");
@@ -161,13 +163,7 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
         requestNumbers[sender] = counter;
 
         if (token == null) {
-            int size;
-            try {
-                size = LocateRegistry.getRegistry(ip, port).list().length;
-                token = new Token(size);
-            } catch (RemoteException e) {
-                LOGGER.error("Remote exception connecting to rmi");
-            }
+            token = new Token(numprocesses);
         }
 
         if (holdsToken && requestNumbers[sender] > token.getValue(sender)) {
@@ -179,7 +175,7 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
                 stub = (DASuzukiKasamiRMI) registry.lookup("rmi:://" + ip + "/process-" + sender);
                 stub.receiveToken(this.pid, token);
             } catch (RemoteException | NotBoundException e) {
-                LOGGER.error("Exception sending token to process");
+                LOGGER.error("Exception sending token to process"); // TODO WHAT HAPPENS WITH TOKEN IF EXCEPTION?
             }
         }
     }
@@ -189,21 +185,37 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
      * initialize requestNumbers.
      */
     private void initLocalCounters() {
-        int size = 1;
         Registry registry;
         try {
             registry = LocateRegistry.getRegistry(ip, port);
-            size = registry.list().length;
+
+            // Remeber the number of processes in the rmi for later.
+            numprocesses = registry.list().length;
         } catch (RemoteException e) {
             LOGGER.error("Remote Exception when connecting to RMI");
         }
-        requestNumbers = new int[size];
+        requestNumbers = new int[numprocesses];
         Arrays.fill(requestNumbers, 0);
     }
 
     public void receiveToken(int sender, Token token) throws RemoteException {
+        executor.submit(new Runnable() {
+            @Override
+            public void run() {
+                handleToken(sender, token);
+            }
+        });
+    }
+    
+    private void handleToken(int sender, Token token) {
         LOGGER.info(pid + " received token from " + sender + " " + token.toString());
+        
+        holdsToken = true;
+        enterCS();
 
+        token.setValue(pid, requestNumbers[pid]);
+
+        // for (j )
     }
    
     
