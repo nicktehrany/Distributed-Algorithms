@@ -9,7 +9,6 @@ import java.rmi.server.ExportException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -27,6 +26,7 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
     private boolean holdsToken = false;
     private String rmiBind = "rmi:://";
     private int[] requestNumbers;
+    private Token token = null;
 
     public DASuzukiKasami(String ip, int port, ExecutorService executor) throws RemoteException {
         try {
@@ -107,8 +107,21 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
         }
 	}
 
+    /**
+     * Submiting simulation of CS to thread by sleeping random time.
+     */
     private void enterCS() {
         LOGGER.info("Entering CS");
+        executor.submit(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    LOGGER.error("Interrupted exception during CS");
+                }
+            }
+        });
     }
 
     /**
@@ -127,11 +140,48 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
         }
 	}
 
+    /**
+     * Wrapper method to create runnable of request and submit to worker thread.
+     */
     public void receiveRequest(int sender, int counter) throws RemoteException {
+        executor.submit(new Runnable() {
+            @Override
+            public void run() {
+                handleRequest(sender, counter);
+            }
+        });
+    }
+
+    private void handleRequest(int sender, int counter) {
         if (requestNumbers[0] == -1) {
             initLocalCounters();
         }
-        LOGGER.info("Received from " + sender + " " + counter);
+
+        LOGGER.info("Received request from " + sender + " counter " + counter);
+        requestNumbers[sender] = counter;
+
+        if (token == null) {
+            int size;
+            try {
+                size = LocateRegistry.getRegistry(ip, port).list().length;
+                token = new Token(size);
+            } catch (RemoteException e) {
+                LOGGER.error("Remote exception connecting to rmi");
+            }
+        }
+
+        if (holdsToken && requestNumbers[sender] > token.getValue(sender)) {
+            holdsToken = false;
+
+            try {
+                Registry registry = LocateRegistry.getRegistry(ip, port);
+                DASuzukiKasamiRMI stub;
+                stub = (DASuzukiKasamiRMI) registry.lookup("rmi:://" + ip + "/process-" + sender);
+                stub.receiveToken(this.pid, token);
+            } catch (RemoteException | NotBoundException e) {
+                LOGGER.error("Exception sending token to process");
+            }
+        }
     }
 
     /**
@@ -151,8 +201,8 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
         Arrays.fill(requestNumbers, 0);
     }
 
-    public void receiveToken(int receiver, Message message) throws RemoteException {
-        // TODO Auto-generated method stub
+    public void receiveToken(int sender, Token token) throws RemoteException {
+        LOGGER.info(pid + " received token from " + sender + " " + token.toString());
 
     }
    

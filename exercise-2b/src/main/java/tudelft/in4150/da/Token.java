@@ -32,4 +32,21 @@ public class Token implements Serializable {
         }
     }
 
+    /**
+     * Get the counter of the token satisfied requests for a process.
+     *
+     * @param index
+     */
+    public int getValue(int index) {
+        return LN[index];
+    }
+
+    /**
+     * 
+     */
+    @Override
+    public String toString() {
+        return Arrays.toString(LN);
+    }
+
 }
