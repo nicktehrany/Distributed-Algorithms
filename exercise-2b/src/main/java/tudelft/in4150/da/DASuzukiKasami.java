@@ -1,15 +1,11 @@
 package tudelft.in4150.da;
 
 import java.rmi.AlreadyBoundException;
-import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.ExportException;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -20,14 +16,18 @@ import org.apache.logging.log4j.Logger;
 public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasamiRMI, Runnable {  
     private static final long serialVersionUID = 1L;
     private static final Logger LOGGER = LogManager.getLogger(DASuzukiKasami.class);
-    private static final String RMIBIND = "rmi:://";
+    private String rmiBind = "rmi:://";
     private String ip;
+    private int port;
+    private boolean holdsToken = false;
+    private int pid;
 
     public DASuzukiKasami(String ip, int pid, int port) throws RemoteException {
         try {
             Registry registry = LocateRegistry.getRegistry(ip, port);
             LOGGER.debug("Binding process " + pid + " to port " + port);
-            registry.bind(RMIBIND + ip + "/process-" + pid, this);
+            rmiBind += ip + "/process-" + pid;
+            registry.bind(rmiBind, this);
         } catch (RemoteException e) {
             LOGGER.error("Remote exception when binding process " + pid);
             e.printStackTrace();
@@ -37,6 +37,8 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
         }
 
         this.ip = ip;
+        this.port = port;
+        this.pid = pid;
     }
     
     /**
@@ -45,13 +47,14 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
      * @param port Port on which RMI registry is created.
      */
     public static int initRegistry(int port) {
-        int initialized = 0;
+        int initialized = 1;
+
         // Setup RMI regisrty
         try {
             java.rmi.registry.LocateRegistry.createRegistry(port);
         } catch (ExportException e) {
             LOGGER.debug("Registry already intialized");
-            initialized = 1;
+            initialized = 0;
         } catch (RemoteException e) {
             LOGGER.debug("Remote Exception initializing registry");
             e.getStackTrace();
@@ -61,6 +64,7 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
         if (System.getSecurityManager() == null) {
             System.setSecurityManager(new SecurityManager());
         }
+
         return initialized;
     }
 
@@ -75,6 +79,26 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
         // TODO Auto-generated method stub
 
     }
+
+	public void requestCS(int pid) {
+
+	}
+
+    /**
+     * Each process checks if it is first in the rmi registry list and if so gets assigned the token.
+     */
+	public void assignToken() {
+        try {
+            String[] registeredProcesses = LocateRegistry.getRegistry(port).list();
+            if (rmiBind.equals(registeredProcesses[0])) {
+                this.holdsToken = true;
+                LOGGER.info(pid + " holds the token first");
+            }
+        } catch (RemoteException e) {
+            LOGGER.error("Remote Exception");
+            e.printStackTrace();
+        }
+	}
    
     
 }

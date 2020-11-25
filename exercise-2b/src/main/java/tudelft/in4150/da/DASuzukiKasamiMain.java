@@ -41,26 +41,26 @@ public final class DASuzukiKasamiMain {
         int initialized = DASuzukiKasami.initRegistry(port);
         localProcesses = new Process[numProcesses];
 
-        for (Process proc: localProcesses) {
+        for (int i = 0; i < localProcesses.length; i++) {
             try {
-                proc = new Process(ip, port);
+                localProcesses[i] = new Process(ip, port);
             } catch (RemoteException e) {
-                // TODO Auto-generated catch block
+                LOGGER.error("Remote exception creating process");
                 e.printStackTrace();
             }
         }
 
         // TODO SLEEP 10s, wait for other servers
-
         try {
-            String[] x= LocateRegistry.getRegistry(port).list();
-            for (String b: x) {
-                LOGGER.info(b);
-            }
-        } catch (RemoteException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            LOGGER.info("Sleeping for 10 seconds to wait for others to bind processes to rmi");
+            Thread.sleep(10000);
+        } catch (InterruptedException e1) {
+            LOGGER.error("Interrupted Exception");
+            e1.printStackTrace();
         }
+
+        // TODO if initialized clean up registry
+
         // System.exit(0);
     }
 }
