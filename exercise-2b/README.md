@@ -13,10 +13,15 @@ Note, to run tests in IDEs the tests still need to be compiled with the command 
 
 The build will generate two .jar files in the target/ directory. One for the logging tool log4j2, which we are using
 to log information on message exchanges between processes, and a second which is the .jar of the actual program.
-To execute the generated .jar file,
+To execute the generated .jar file run this for one JVM instance,
 
 ```bash
 java -Djava.security.policy=java.policy -jar target/DA-Suzuki-Kasami.jar -initrmi -proc=1
+```
+and this for any additional JVM instances,
+
+```bash
+java -Djava.security.policy=java.policy -jar target/DA-Suzuki-Kasami.jar -proc=1
 ```
 
 There are additional parameters for specifying the port to bind to and the IP address on which to do rmi.

@@ -18,16 +18,18 @@ import org.apache.logging.log4j.Logger;
 public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasamiRMI {  
     private static final long serialVersionUID = 1L;
     private static final Logger LOGGER = LogManager.getLogger(DASuzukiKasami.class);
-    private String rmiBind = "rmi:://";
-    private String ip;
-    private int port;
-    private boolean holdsToken = false;
     private int pid;
+    private int port;
+    private String ip;
     private ExecutorService executor;
+    private boolean holdsToken = false;
+    private String rmiBind = "rmi:://";
+    private int[] RN;
 
-    public DASuzukiKasami(String ip, int pid, int port, ExecutorService executor) throws RemoteException {
+    public DASuzukiKasami(String ip, int port, ExecutorService executor) throws RemoteException {
         try {
             Registry registry = LocateRegistry.getRegistry(ip, port);
+            this.pid = registry.list().length;
             LOGGER.debug("Binding process " + pid + " to port " + port);
             rmiBind += ip + "/process-" + pid;
             LOGGER.info(rmiBind);
@@ -40,9 +42,12 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
             e.printStackTrace();
         }
 
+        // Initialize local array to invalid value to check later and initialize once all processes connected to rmi.
+        RN = new int[1];
+        RN[0] = -1;
+
         this.ip = ip;
         this.port = port;
-        this.pid = pid;
         this.executor = executor;
     }
     

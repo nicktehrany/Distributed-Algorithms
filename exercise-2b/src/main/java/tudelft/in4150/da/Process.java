@@ -1,7 +1,6 @@
 package tudelft.in4150.da;
 
 import java.rmi.RemoteException;
-import java.util.Random;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import java.util.concurrent.ExecutorService;
@@ -15,11 +14,8 @@ public class Process {
     private int pid;
 
     public Process(String ip, int port) throws RemoteException {
-        Random rand = new Random(System.currentTimeMillis());
-        this.pid = Math.abs(rand.nextInt());
-        LOGGER.debug("Starting thread " + pid);
         executor = Executors.newSingleThreadExecutor();
-        instance = new DASuzukiKasami(ip, pid, port, executor);
+        instance = new DASuzukiKasami(ip, port, executor);
         instance.assignToken();
     }
 

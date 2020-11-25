@@ -38,12 +38,12 @@ public final class DASuzukiKasamiMain {
             }
         }
 
-        // Init the RMI registry and create processes.
+        // Init the RMI registry.
         if (initialize)
             DASuzukiKasami.initRegistry(port);
         
+        // Create all local processes.
         localProcesses = new Process[numProcesses];
-
         for (int i = 0; i < localProcesses.length; i++) {
             try {
                 localProcesses[i] = new Process(ip, port);
