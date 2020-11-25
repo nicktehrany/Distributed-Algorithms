@@ -114,16 +114,12 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
      */
     private void enterCS() {
         LOGGER.info("Entering CS");
-        executor.submit(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    LOGGER.error("Interrupted exception during CS");
-                }
-            }
-        });
+       
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            LOGGER.error("Interrupted exception during CS");
+        }
     }
 
     /**
@@ -218,7 +214,8 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
         
         holdsToken = true;
         enterCS();
-
+        LOGGER.info("Leaving CS");
+        
         token.setValue(pid, requestNumbers[pid]);
 
         int counter = pid + 1;

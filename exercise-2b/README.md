@@ -28,7 +28,8 @@ There are additional parameters for specifying the port to bind to and the IP ad
 All possible parameters are passed last in the command line, after specifying the .jar to execute. The parameters 
 are `-proc=` for specyfing the number of processes to create on one JVM (Note each process still has its own 
 thread runnning), `-initrm` to specify if this JVM should initialize the RMI registry (Note one JVM **HAS** to 
-do this), and lastly `-port=` to specify the port to bind processes to and, if specified, initialize the rmi on.
+do this), `-port=` to specify the port to bind processes to and, if specified, initialize the rmi on, and lastly
+1-ip=` to specify the ip to bind processes to the rmi.
 
 
 ## Program
