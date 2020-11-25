@@ -6,7 +6,7 @@ import java.util.Arrays;
 /**
  * VectorClock class which is used as the Vector Clock for each of the processes and the timestamps in messages.
  */
-public class VectorClock implements Serializable {
+public class Token implements Serializable {
     private static final long serialVersionUID = 1L;
     private int[] clocks;
 
@@ -15,7 +15,7 @@ public class VectorClock implements Serializable {
      *
      * @param processes
      */
-    public VectorClock(int processes) {
+    public Token(int processes) {
         clocks = new int[processes];
         Arrays.fill(clocks, 0);
     }
@@ -25,7 +25,7 @@ public class VectorClock implements Serializable {
      *
      * @param clock
      */
-    public VectorClock(VectorClock clock) {
+    public Token(Token clock) {
         clocks = new int[clock.clocks.length];
         for (int i = 0; i < clock.clocks.length; i++) {
             this.clocks[i] = clock.clocks[i];
@@ -59,7 +59,7 @@ public class VectorClock implements Serializable {
      * @param timestamp
      * @return boolean
      */
-    public boolean greaterEqual(VectorClock timestamp) {
+    public boolean greaterEqual(Token timestamp) {
         for (int i = 0; i < clocks.length; i++) {
             if (clocks[i] < timestamp.clocks[i]) {
                 return false;
@@ -73,7 +73,7 @@ public class VectorClock implements Serializable {
      *
      * @param bufferTimestamp
      */
-    public void setMax(VectorClock bufferTimestamp) {
+    public void setMax(Token bufferTimestamp) {
         for (int i = 0; i < clocks.length; i++) {
             if (clocks[i] < bufferTimestamp.clocks[i]) {
                 clocks[i] = bufferTimestamp.clocks[i];

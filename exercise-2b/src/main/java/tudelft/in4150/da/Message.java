@@ -10,8 +10,8 @@ import java.util.Map;
  */
 public class Message implements Serializable {
     private static final long serialVersionUID = 1L;
-    private Map<Integer, VectorClock> buffer;
-    private VectorClock timestamp;
+    private Map<Integer, Token> buffer;
+    private Token timestamp;
 
     /**
      * Construct a message.
@@ -19,8 +19,8 @@ public class Message implements Serializable {
      * @param numProcesses // Number of total processes needed for VectorClock creation
      */
     public Message(int numProcesses) {
-        buffer = new HashMap<Integer, VectorClock>();
-        timestamp = new VectorClock(numProcesses);
+        buffer = new HashMap<Integer, Token>();
+        timestamp = new Token(numProcesses);
     }
 
     /**
@@ -29,9 +29,9 @@ public class Message implements Serializable {
      * @param message
      */
     public Message(Message message) {
-        buffer = new HashMap<Integer, VectorClock>();
+        buffer = new HashMap<Integer, Token>();
         buffer.putAll(message.buffer);
-        timestamp = new VectorClock(message.timestamp);
+        timestamp = new Token(message.timestamp);
     }
 
     /**
@@ -39,7 +39,7 @@ public class Message implements Serializable {
      *
      * @param timestamp
      */
-    public void setTimestamp(VectorClock timestamp) {
+    public void setTimestamp(Token timestamp) {
         this.timestamp = timestamp;
     }
 
@@ -48,7 +48,7 @@ public class Message implements Serializable {
      *
      * @param buffer
      */
-    public void setBuffer(Map<Integer, VectorClock> buffer) {
+    public void setBuffer(Map<Integer, Token> buffer) {
         this.buffer = buffer;
     }
 
@@ -71,7 +71,7 @@ public class Message implements Serializable {
      *
      * @return VectorClock
      */
-    public VectorClock getTimestamp() {
+    public Token getTimestamp() {
         return timestamp;
     }
 
@@ -80,7 +80,7 @@ public class Message implements Serializable {
      *
      * @return Map<Integer, VectorClock>
      */
-    public Map<Integer, VectorClock> getBuffer() {
+    public Map<Integer, Token> getBuffer() {
         return buffer;
     }
 }
