@@ -173,6 +173,7 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
                 Registry registry = LocateRegistry.getRegistry(ip, port);
                 DASuzukiKasamiRMI stub;
                 stub = (DASuzukiKasamiRMI) registry.lookup("rmi:://" + ip + "/process-" + sender);
+                LOGGER.info("Sending token to rmi:://" + ip + "/process-" + sender);
                 stub.receiveToken(this.pid, token);
             } catch (RemoteException | NotBoundException e) {
                 LOGGER.error("Exception sending token to process"); // TODO WHAT HAPPENS WITH TOKEN IF EXCEPTION?
@@ -207,6 +208,11 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
         });
     }
     
+    /**
+     * Handle the received token, enter own CS, and send token to next requesting process.
+     * @param sender
+     * @param token
+     */
     private void handleToken(int sender, Token token) {
         LOGGER.info(pid + " received token from " + sender + " " + token.toString());
         
@@ -215,7 +221,29 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
 
         token.setValue(pid, requestNumbers[pid]);
 
-        // for (j )
+        int counter = pid + 1;
+        while (counter != pid) {
+
+            if (requestNumbers[counter] > token.getValue(counter)) {
+                holdsToken = false;
+                Registry registry;
+                try {
+                    registry = LocateRegistry.getRegistry(ip, port);
+                    DASuzukiKasamiRMI stub = (DASuzukiKasamiRMI) registry.lookup("rmi:://" + ip + "/process-" + sender);
+                    LOGGER.info("Sending token to rmi:://" + ip + "/process-" + sender);
+                    stub.receiveToken(this.pid, token);
+                } catch (RemoteException e) {
+                    LOGGER.error("Remote exception sending token.");
+                } catch (NotBoundException e) {
+                    LOGGER.error("Not bound exception sending token.");
+                }
+                break;
+            }
+
+            if (counter == numprocesses) {
+                counter = 0;
+            }
+        }
     }
    
     
