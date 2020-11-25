@@ -11,5 +11,6 @@ import java.rmi.RemoteException;
  */
 public interface DASuzukiKasamiRMI extends Remote {
 
-    void receive(int receiver, Message message) throws RemoteException;
+    void receiveRequest(int receiver, Message message) throws RemoteException;
+    void receiveToken(int receiver, Message message) throws RemoteException;
 }

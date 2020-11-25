@@ -2,7 +2,6 @@ package tudelft.in4150.da;
 
 import java.rmi.RemoteException;
 import java.util.Random;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -15,6 +14,7 @@ public final class DASuzukiKasamiMain {
     private static int port = 1098; // Default Port
     private static int numProcesses = 1; // Default 1 Process
     private static String ip = "localhost"; // Default ip of localhost
+    private static boolean initialize = false;
 
     private DASuzukiKasamiMain() {
     }
@@ -29,14 +29,19 @@ public final class DASuzukiKasamiMain {
         for (String arg : args) {
             if (arg.startsWith("-proc="))
                 numProcesses = Integer.parseInt(arg.replaceAll("-proc=", ""));
-            else if (arg.startsWith("-port"))
+            else if (arg.startsWith("-port="))
                 port = Integer.parseInt(arg.replaceAll("-port=", ""));
-            else if (arg.startsWith("-ip"))
+            else if (arg.startsWith("-ip="))
                 ip = arg.replaceAll("-ip=", "");
+            else if (arg.equals("-initrmi")) {
+                initialize = true;
+            }
         }
 
         // Init the RMI registry and create processes.
-        int initialized = DASuzukiKasami.initRegistry(port);
+        if (initialize)
+            DASuzukiKasami.initRegistry(port);
+        
         localProcesses = new Process[numProcesses];
 
         for (int i = 0; i < localProcesses.length; i++) {
@@ -62,7 +67,7 @@ public final class DASuzukiKasamiMain {
         int index = Math.abs(rand.nextInt()) % numProcesses;
 
         // TODO TEMP add some random time delay between requests
-        if (initialized == 1)
+        if (!initialize)
             localProcesses[index].requestCS();
 
         // TODO if (initialized == 1) clean up registry

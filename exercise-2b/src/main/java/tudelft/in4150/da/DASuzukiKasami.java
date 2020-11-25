@@ -15,7 +15,7 @@ import org.apache.logging.log4j.Logger;
  * Algorithms main class that implements the RMI interface and provides
  * additonal functionality for bootstraping processes and servers.
  */
-public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasamiRMI, Runnable {  
+public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasamiRMI {  
     private static final long serialVersionUID = 1L;
     private static final Logger LOGGER = LogManager.getLogger(DASuzukiKasami.class);
     private String rmiBind = "rmi:://";
@@ -30,6 +30,7 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
             Registry registry = LocateRegistry.getRegistry(ip, port);
             LOGGER.debug("Binding process " + pid + " to port " + port);
             rmiBind += ip + "/process-" + pid;
+            LOGGER.info(rmiBind);
             registry.bind(rmiBind, this);
         } catch (RemoteException e) {
             LOGGER.error("Remote exception when binding process " + pid);
@@ -50,15 +51,13 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
      *
      * @param port Port on which RMI registry is created.
      */
-    public static int initRegistry(int port) {
-        int initialized = 1;
+    public static void initRegistry(int port) {
 
         // Setup RMI regisrty
         try {
             java.rmi.registry.LocateRegistry.createRegistry(port);
         } catch (ExportException e) {
             LOGGER.debug("Registry already intialized");
-            initialized = 0;
         } catch (RemoteException e) {
             LOGGER.debug("Remote Exception initializing registry");
             e.getStackTrace();
@@ -68,20 +67,6 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
         if (System.getSecurityManager() == null) {
             System.setSecurityManager(new SecurityManager());
         }
-
-        return initialized;
-    }
-
-    @Override
-    public void run() {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void receive(int receiver, Message message) throws RemoteException {
-        // TODO Auto-generated method stub
-
     }
 
 	public void requestCS() {
@@ -91,7 +76,7 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
             enterCS();
         } else {
             try {
-                String[] registeredProcesses = LocateRegistry.getRegistry(port).list();
+                String[] registeredProcesses = LocateRegistry.getRegistry(ip , port).list();
                 for (String process: registeredProcesses) {
                     LOGGER.info("requesting from " + process); // TODO send broadcast to all
                 }
@@ -122,6 +107,16 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
             e.printStackTrace();
         }
 	}
+
+    public void receiveRequest(int receiver, Message message) throws RemoteException {
+        // TODO Auto-generated method stub
+
+    }
+
+    public void receiveToken(int receiver, Message message) throws RemoteException {
+        // TODO Auto-generated method stub
+
+    }
    
     
 }

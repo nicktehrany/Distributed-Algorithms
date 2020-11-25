@@ -10,7 +10,7 @@ import java.util.Map;
  */
 public class Message implements Serializable {
     private static final long serialVersionUID = 1L;
-    private Token timestamp;
+    private Token token;
 
     /**
      * Construct a message.
@@ -18,7 +18,7 @@ public class Message implements Serializable {
      * @param numProcesses // Number of total processes needed for Token creation
      */
     public Message(int numProcesses) {
-        timestamp = new Token(numProcesses);
+        token = new Token(numProcesses);
     }
 
     /**
@@ -27,6 +27,6 @@ public class Message implements Serializable {
      * @param message
      */
     public Message(Message message) {
-        timestamp = new Token(message.timestamp);
+        token = new Token(message.token);
     }
 }
