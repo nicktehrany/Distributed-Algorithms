@@ -45,12 +45,11 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
         }
 
         requestNumbers = new int[1];
-        requestNumbers[0] = 0;
+        requestNumbers[0] = -1;
 
         this.ip = ip;
-        this.port = port;
+        this.port = port; 
         this.executor = executor;
-        this.token = new Token(1);
     }
 
     /**
@@ -82,7 +81,10 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
     public void requestCS() {
         LOGGER.info(this.pid + " requesting CS");
 
-        checkValidCounters(pid);
+        // Checking if RN has been initialized.
+        if (requestNumbers[0] == -1) {
+            initLocalCounters();
+        }
 
         requestNumbers[this.pid]++;
 
@@ -137,19 +139,30 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
      * @param counter
      */
     public void receiveRequest(int sender, int counter) throws RemoteException {
-        executor.submit(new Runnable() {
-            @Override
-            public void run() {
-                handleRequest(sender, counter);
-            }
-        });
+        if (sender > numprocesses - 1) {
+            LOGGER.info("Rejecting request from " + sender + ", not registered in time.");
+        } else {
+            executor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    handleRequest(sender, counter);
+                }
+            });
+        }
     }
 
     private void handleRequest(int sender, int counter) {
-        
         LOGGER.info("Received request from " + sender + " counter " + counter);
-        checkValidCounters(sender);
+
+        if (requestNumbers[0] == -1) {
+            initLocalCounters();
+        }
         requestNumbers[sender] = counter;
+
+        // If first process holds token and token has not been created, create it.
+        if (holdsToken && token == null) {
+            token = new Token(numprocesses);
+        }
 
         if (holdsToken && requestNumbers[sender] > token.getValue(sender)) {
             holdsToken = false;
@@ -224,23 +237,20 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
     }
     
     /**
-     * If a new process has been added to the registry, but is not present in the local array yet and token, update 
-     * both by copying existing values and creating new indeices for new processes.
-     * @param id
+     * If the requestNumbers counter has not been initialized yet count the number of processes in the rmi registry and
+     * initialize requestNumbers.
      */
-    private void checkValidCounters(int id) {
-        if (requestNumbers.length < id + 1) {
-            int[] temp = new int[id + 1];
-            Arrays.fill(temp, 0);
-            for (int i = 0; i < requestNumbers.length; i++) {
-                temp[i] = requestNumbers[i];
-            }
-            requestNumbers = temp;
-            numprocesses = requestNumbers.length;
-        }
+    private void initLocalCounters() {
+        Registry registry;
+        try {
+            registry = LocateRegistry.getRegistry(ip, port);
 
-        if (token.getLength() < id + 1) {
-            token = new Token(token, id + 1);
+            // Remeber the number of processes in the rmi for later.
+            numprocesses = registry.list().length;
+        } catch (RemoteException e) {
+            LOGGER.error("Remote Exception when connecting to RMI");
         }
+        requestNumbers = new int[numprocesses];
+        Arrays.fill(requestNumbers, 0);
     }
 }

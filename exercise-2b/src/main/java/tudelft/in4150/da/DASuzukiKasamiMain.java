@@ -14,6 +14,7 @@ public final class DASuzukiKasamiMain {
     private static int port = 1098; // Default Port
     private static int numProcesses = 1; // Default 1 Process
     private static String ip = "localhost"; // Default ip of localhost
+    private static int numRequests = 1;
 
     private DASuzukiKasamiMain() {
     }
@@ -32,6 +33,8 @@ public final class DASuzukiKasamiMain {
                 port = Integer.parseInt(arg.replaceAll("-port=", ""));
             else if (arg.startsWith("-ip="))
                 ip = arg.replaceAll("-ip=", "");
+            else if (arg.startsWith("-reqs="))
+                numRequests = Integer.parseInt(arg.replaceAll("-reqs=", ""));
         }
 
         // Attempt to initialize the RMI registry.
