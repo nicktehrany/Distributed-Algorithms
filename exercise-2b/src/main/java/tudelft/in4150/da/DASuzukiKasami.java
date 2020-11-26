@@ -17,20 +17,28 @@ import org.apache.logging.log4j.Logger;
  * Algorithms main class that implements the RMI interface and provides
  * additonal functionality for bootstraping processes and servers.
  */
+@SuppressWarnings("checkstyle:hiddenfield")
 public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasamiRMI {
     private static final long serialVersionUID = 1L;
     private static final Logger LOGGER = LogManager.getLogger(DASuzukiKasami.class);
-    private static final int CSTime = 1000;
+    private static final int CSTIME = 1000;
     private int pid;
     private int port;
     private String ip;
     private ExecutorService executor;
-    private boolean holdsToken = false;
+    private boolean holdsToken;
     private String rmiBind = "rmi:://";
     private int[] requestNumbers;
-    private Token token = null;
-    private int numprocesses = 0;
+    private Token token;
+    private int numprocesses;
 
+    /**
+     * Constructor method to bind process to the rmi registry on provided port and ip.
+     * @param ip
+     * @param port
+     * @param executor
+     * @throws RemoteException
+     */
     public DASuzukiKasami(String ip, int port, ExecutorService executor) throws RemoteException {
         try {
             Registry registry = LocateRegistry.getRegistry(ip, port);
@@ -50,7 +58,7 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
         requestNumbers[0] = -1;
 
         this.ip = ip;
-        this.port = port; 
+        this.port = port;
         this.executor = executor;
     }
 
@@ -103,7 +111,7 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
         } catch (NotBoundException e) {
             LOGGER.error("Unbound process exception");
         }
-	}
+    }
 
     /**
      * Submiting simulation of CS to thread by sleeping random time.
@@ -111,8 +119,8 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
     private void enterCS() {
         LOGGER.info("Entering CS");
         Random rand = new Random(System.currentTimeMillis());
-        int delay = Math.abs(rand.nextInt()) % CSTime;
-        
+        int delay = Math.abs(rand.nextInt()) % CSTIME;
+
         try {
             Thread.sleep(delay);
             LOGGER.info("Leaving CS");
@@ -124,7 +132,7 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
     /**
      * Each process checks if it is first in the rmi registry list and if so gets assigned the token.
      */
-	public void assignToken() {
+    public void assignToken() {
         try {
             String[] registeredProcesses = LocateRegistry.getRegistry(port).list();
             if (rmiBind.equals(registeredProcesses[0])) {
@@ -135,7 +143,7 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
             LOGGER.error("Remote Exception");
             e.printStackTrace();
         }
-	}
+    }
 
     /**
      * Wrapper method to create runnable of request and submit to worker thread.
@@ -191,7 +199,7 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
             }
         });
     }
-    
+
     /**
      * Handle the received token, enter own CS, and send token to next requesting process.
      * @param sender
@@ -199,10 +207,10 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
      */
     private void handleToken(int sender, Token token) {
         LOGGER.info(pid + " received token from " + sender + " " + token.getRequests());
-        
+
         holdsToken = true;
         enterCS();
-        
+
         this.token = token;
         this.token.setValue(pid, requestNumbers[pid]);
 
@@ -223,7 +231,7 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
             sendToken();
         }
     }
-    
+
     /**
      * If the requestNumbers counter has not been initialized yet count the number of processes in the rmi registry and
      * initialize requestNumbers.

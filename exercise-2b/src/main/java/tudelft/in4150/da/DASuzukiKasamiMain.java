@@ -16,6 +16,7 @@ public final class DASuzukiKasamiMain {
     private static String ip = "localhost"; // Default ip of localhost
     private static int numRequests = 1;
     private static final int DELAY = 4000;
+    private static final int WAIT = 10000;
 
     private DASuzukiKasamiMain() {
     }
@@ -28,19 +29,20 @@ public final class DASuzukiKasamiMain {
         Process[] localProcesses;
 
         for (String arg : args) {
-            if (arg.startsWith("-proc="))
+            if (arg.startsWith("-proc=")) {
                 numProcesses = Integer.parseInt(arg.replaceAll("-proc=", ""));
-            else if (arg.startsWith("-port="))
+            } else if (arg.startsWith("-port=")) {
                 port = Integer.parseInt(arg.replaceAll("-port=", ""));
-            else if (arg.startsWith("-ip="))
+            } else if (arg.startsWith("-ip=")) {
                 ip = arg.replaceAll("-ip=", "");
-            else if (arg.startsWith("-reqs="))
+            } else if (arg.startsWith("-reqs=")) {
                 numRequests = Integer.parseInt(arg.replaceAll("-reqs=", ""));
+            }
         }
 
         // Attempt to initialize the RMI registry.
         DASuzukiKasami.initRegistry(port);
-        
+
         // Create all local processes.
         localProcesses = new Process[numProcesses];
         for (int i = 0; i < localProcesses.length; i++) {
@@ -52,10 +54,10 @@ public final class DASuzukiKasamiMain {
             }
         }
 
-        // Sleep 5s, waiting for other to bind to the registry before starting to send messages.
+        // Sleep 10s, waiting for other to bind to the registry before starting to send messages.
         try {
             LOGGER.info("Waiting 10s for other processes to bind to rmi");
-            Thread.sleep(10000);
+            Thread.sleep(WAIT);
         } catch (InterruptedException e1) {
             LOGGER.error("Interrupted Exception");
             e1.printStackTrace();
@@ -79,7 +81,7 @@ public final class DASuzukiKasamiMain {
         // Sleep 10s in canse other processes still send requests.
         try {
             LOGGER.info("Sleeping 10s for other processes to finish before exiting");
-            Thread.sleep(10000);
+            Thread.sleep(WAIT);
         } catch (InterruptedException e1) {
             LOGGER.error("Interrupted Exception");
             e1.printStackTrace();
