@@ -214,36 +214,37 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
         this.token = token;
         this.token.setValue(pid, requestNumbers[pid]);
 
-        int counter = pid + 1;
-        while (counter != pid) {
+        int counter;
 
+        // If current process has largets pid, counter will be out of bounds, so set it to 0.
+        if (pid + 1 == numprocesses - 1)
+            counter = pid + 1;
+        else 
+            counter = 0;
+
+        while (counter != pid) {
+            if (requestNumbers[counter] > token.getValue(counter)) {
+                holdsToken = false;
+                Registry registry;
+                try {
+                    registry = LocateRegistry.getRegistry(ip, port);
+                    DASuzukiKasamiRMI stub = (DASuzukiKasamiRMI) registry.lookup("rmi:://" + ip + "/process-" + sender);
+                    LOGGER.info("Sending token to rmi:://" + ip + "/process-" + sender);
+                    stub.receiveToken(this.pid, token);
+                } catch (RemoteException e) {
+                    LOGGER.error("Remote exception sending token.");
+                } catch (NotBoundException e) {
+                    LOGGER.error("Not bound exception sending token.");
+                }
+                break;
+            }
+
+            // subtract 1 as pids start at 0 but numprocesses at 1.
             if (counter == numprocesses - 1) {
                 counter = 0;
             } else {
-
-                if (requestNumbers[counter] > token.getValue(counter)) {
-                    holdsToken = false;
-                    Registry registry;
-                    try {
-                        registry = LocateRegistry.getRegistry(ip, port);
-                        DASuzukiKasamiRMI stub = (DASuzukiKasamiRMI) registry.lookup("rmi:://" + ip + "/process-" + sender);
-                        LOGGER.info("Sending token to rmi:://" + ip + "/process-" + sender);
-                        stub.receiveToken(this.pid, token);
-                    } catch (RemoteException e) {
-                        LOGGER.error("Remote exception sending token.");
-                    } catch (NotBoundException e) {
-                        LOGGER.error("Not bound exception sending token.");
-                    }
-                    break;
-                }
-                
-                // subtract 1 as pids start at 0 but numprocesses at 1.
-                if (counter == numprocesses - 1) {
-                    counter = 0;
-                } else {
-                    counter++;
-                } 
-            }    
+                counter++;
+            }  
         }
     }
     

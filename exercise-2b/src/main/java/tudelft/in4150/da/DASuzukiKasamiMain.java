@@ -76,6 +76,7 @@ public final class DASuzukiKasamiMain {
 
         }
 
+        // Sleep 10s in canse other processes still send requests.
         try {
             LOGGER.info("Sleeping 10s for other processes to finish before exiting");
             Thread.sleep(10000);
