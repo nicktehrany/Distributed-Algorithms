@@ -172,7 +172,8 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
 
         if (holdsToken && requestNumbers[sender] > token.getValue(sender)) {
             holdsToken = false;
-            sendToken(sender);
+            this.token.enqueue(sender);
+            sendToken();
         }
     }
 
@@ -216,8 +217,7 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
         while (counter != pid) {
             if (requestNumbers[counter] > token.getValue(counter)) {
                 holdsToken = false;
-                sendToken(counter);
-                break;
+                this.token.enqueue(counter);
             }
 
             // subtract 1 as pids start at 0 but numprocesses at 1.
@@ -226,6 +226,9 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
             } else {
                 counter++;
             }  
+        }
+        if (!this.token.queueIsEmpty()) {
+            sendToken();
         }
     }
     
@@ -247,7 +250,8 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
         Arrays.fill(requestNumbers, 0);
     }
 
-    private void sendToken(int receiver) {
+    private void sendToken() {
+        int receiver = this.token.getQueueHead();
         Registry registry;
         try {
             registry = LocateRegistry.getRegistry(ip, port);

@@ -81,4 +81,8 @@ public class Token implements Serializable {
         return element;
     }
 
+    public boolean queueIsEmpty() {
+        return queue.isEmpty();
+    }
+
 }
