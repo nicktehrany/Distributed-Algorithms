@@ -2,6 +2,8 @@ package tudelft.in4150.da;
 
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.Queue;
 
 /**
  * Token class which is used as the Vector token for each of the processes and the timestamps in messages.
@@ -9,7 +11,8 @@ import java.util.Arrays;
 public class Token implements Serializable {
     private static final long serialVersionUID = 1L;
     private int[] LN;
-
+    Queue<Integer> queue;
+    
     /**
      * Token constructor, initialize token with 0s on Vectrotoken construction.
      *
@@ -18,6 +21,7 @@ public class Token implements Serializable {
     public Token(int processes) {
         LN = new int[processes];
         Arrays.fill(LN, 0);
+        queue = new LinkedList<>(); 
     }
 
     /**
@@ -55,13 +59,26 @@ public class Token implements Serializable {
     /**
      * 
      */
-    @Override
-    public String toString() {
+    public String getRequests() {
         return Arrays.toString(LN);
     }
 
     public int getLength() {
         return LN.length;
+    }
+
+    public String getQueue() {
+        return queue.toString();
+    }
+
+    public void enqueue(int element) {
+        queue.add(element);
+    }
+
+    public int getQueueHead() {
+        int element = queue.peek();
+        queue.remove(element);
+        return element;
     }
 
 }

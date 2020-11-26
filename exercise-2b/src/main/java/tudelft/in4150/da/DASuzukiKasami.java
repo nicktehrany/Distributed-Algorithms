@@ -172,16 +172,7 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
 
         if (holdsToken && requestNumbers[sender] > token.getValue(sender)) {
             holdsToken = false;
-
-            try {
-                Registry registry = LocateRegistry.getRegistry(ip, port);
-                DASuzukiKasamiRMI stub;
-                stub = (DASuzukiKasamiRMI) registry.lookup("rmi:://" + ip + "/process-" + sender);
-                LOGGER.info("Sending token to rmi:://" + ip + "/process-" + sender);
-                stub.receiveToken(this.pid, token);
-            } catch (RemoteException | NotBoundException e) {
-                LOGGER.error("Exception sending token to process"); // TODO WHAT HAPPENS WITH TOKEN IF EXCEPTION?
-            }
+            sendToken(sender);
         }
     }
 
@@ -206,7 +197,7 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
      * @param token
      */
     private void handleToken(int sender, Token token) {
-        LOGGER.info(pid + " received token from " + sender + " " + token.toString());
+        LOGGER.info(pid + " received token from " + sender + " " + token.getRequests());
         
         holdsToken = true;
         enterCS();
@@ -225,17 +216,7 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
         while (counter != pid) {
             if (requestNumbers[counter] > token.getValue(counter)) {
                 holdsToken = false;
-                Registry registry;
-                try {
-                    registry = LocateRegistry.getRegistry(ip, port);
-                    DASuzukiKasamiRMI stub = (DASuzukiKasamiRMI) registry.lookup("rmi:://" + ip + "/process-" + sender);
-                    LOGGER.info("Sending token to rmi:://" + ip + "/process-" + sender);
-                    stub.receiveToken(this.pid, token);
-                } catch (RemoteException e) {
-                    LOGGER.error("Remote exception sending token.");
-                } catch (NotBoundException e) {
-                    LOGGER.error("Not bound exception sending token.");
-                }
+                sendToken(counter);
                 break;
             }
 
@@ -264,5 +245,19 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
         }
         requestNumbers = new int[numprocesses];
         Arrays.fill(requestNumbers, 0);
+    }
+
+    private void sendToken(int receiver) {
+        Registry registry;
+        try {
+            registry = LocateRegistry.getRegistry(ip, port);
+            DASuzukiKasamiRMI stub = (DASuzukiKasamiRMI) registry.lookup("rmi:://" + ip + "/process-" + receiver);
+            LOGGER.info("Sending token to rmi:://" + ip + "/process-" + receiver);
+            stub.receiveToken(this.pid, token);
+        } catch (RemoteException e) {
+            LOGGER.error("Remote exception sending token.");
+        } catch (NotBoundException e) {
+            LOGGER.error("Not bound exception sending token."); // TODO WHAT HAPPENS WITH TOKEN IF EXCEPTION?
+        }
     }
 }
