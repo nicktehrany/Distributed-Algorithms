@@ -167,23 +167,11 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
     }
 
     /**
-     * If the requestNumbers counter has not been initialized yet count the number of processes in the rmi registry and
-     * initialize requestNumbers.
+     * Receive the token over rmi and create a runnable of handling the token for worker thread.
+     *
+     * @param sender
+     * @param token
      */
-    private void initLocalCounters() {
-        Registry registry;
-        try {
-            registry = LocateRegistry.getRegistry(ip, port);
-
-            // Remeber the number of processes in the rmi for later.
-            numprocesses = registry.list().length;
-        } catch (RemoteException e) {
-            LOGGER.error("Remote Exception when connecting to RMI");
-        }
-        requestNumbers = new int[numprocesses];
-        Arrays.fill(requestNumbers, 0);
-    }
-
     public void receiveToken(int sender, Token token) throws RemoteException {
         executor.submit(new Runnable() {
             @Override

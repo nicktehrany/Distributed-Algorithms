@@ -14,7 +14,6 @@ public final class DASuzukiKasamiMain {
     private static int port = 1098; // Default Port
     private static int numProcesses = 1; // Default 1 Process
     private static String ip = "localhost"; // Default ip of localhost
-    private static boolean initialize = false;
 
     private DASuzukiKasamiMain() {
     }
@@ -33,14 +32,10 @@ public final class DASuzukiKasamiMain {
                 port = Integer.parseInt(arg.replaceAll("-port=", ""));
             else if (arg.startsWith("-ip="))
                 ip = arg.replaceAll("-ip=", "");
-            else if (arg.equals("-initrmi")) {
-                initialize = true;
-            }
         }
 
-        // Init the RMI registry.
-        if (initialize)
-            DASuzukiKasami.initRegistry(port);
+        // Attempt to initialize the RMI registry.
+        DASuzukiKasami.initRegistry(port);
         
         // Create all local processes.
         localProcesses = new Process[numProcesses];
@@ -67,8 +62,7 @@ public final class DASuzukiKasamiMain {
         int index = Math.abs(rand.nextInt()) % numProcesses;
 
         // TODO TEMP add some random time delay between requests
-        if (!initialize)
-            localProcesses[index].requestCS();
+        localProcesses[index].requestCS();
 
         // TODO if (initialized == 1) clean up registry
 
