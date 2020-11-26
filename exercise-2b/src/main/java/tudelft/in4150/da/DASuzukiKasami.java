@@ -206,26 +206,18 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
         this.token = token;
         this.token.setValue(pid, requestNumbers[pid]);
 
-        int counter;
-
-        // If current process has largets pid, counter will be out of bounds, so set it to 0.
-        if (pid + 1 == numprocesses - 1)
-            counter = pid + 1;
-        else 
-            counter = 0;
-
-        while (counter != pid) {
+        int counter = (pid + 1) % numprocesses;
+        boolean iterate = true;
+        while (iterate) {
             if (requestNumbers[counter] > token.getValue(counter)) {
                 holdsToken = false;
                 this.token.enqueue(counter);
             }
 
-            // subtract 1 as pids start at 0 but numprocesses at 1.
-            if (counter == numprocesses - 1) {
-                counter = 0;
-            } else {
-                counter++;
-            }  
+            if (counter == pid) {
+                iterate = false;
+            }
+            counter = (counter + 1) % numprocesses;
         }
         if (!this.token.queueIsEmpty()) {
             sendToken();
