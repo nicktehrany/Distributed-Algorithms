@@ -44,14 +44,13 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
             e.printStackTrace();
         }
 
-        // Initialize local array to invalid value to check later and initialize once
-        // all processes connected to rmi.
         requestNumbers = new int[1];
-        requestNumbers[0] = -1;
+        requestNumbers[0] = 0;
 
         this.ip = ip;
         this.port = port;
         this.executor = executor;
+        this.token = new Token(1);
     }
 
     /**
@@ -83,10 +82,7 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
     public void requestCS() {
         LOGGER.info(this.pid + " requesting CS");
 
-        // Checking if RN has been initialized.
-        if (requestNumbers[0] == -1) {
-            initLocalCounters();
-        }
+        checkValidCounters(pid);
 
         requestNumbers[this.pid]++;
 
@@ -95,11 +91,7 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
             String[] registeredProcesses = registry.list();
             for (String process : registeredProcesses) {
                 DASuzukiKasamiRMI stub = (DASuzukiKasamiRMI) registry.lookup(process);
-
-                // Don't send request to yourself.
-                if (!process.contains("process-" + pid)) {
-                    stub.receiveRequest(this.pid, requestNumbers[this.pid]);
-                }
+                stub.receiveRequest(this.pid, requestNumbers[this.pid]);
             }
         } catch (RemoteException e) {
             LOGGER.error("Remote Exception");
@@ -114,9 +106,10 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
      */
     private void enterCS() {
         LOGGER.info("Entering CS");
-       
+        
         try {
             Thread.sleep(1000);
+            LOGGER.info("Leaving CS");
         } catch (InterruptedException e) {
             LOGGER.error("Interrupted exception during CS");
         }
@@ -140,6 +133,8 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
 
     /**
      * Wrapper method to create runnable of request and submit to worker thread.
+     * @param sender
+     * @param counter
      */
     public void receiveRequest(int sender, int counter) throws RemoteException {
         executor.submit(new Runnable() {
@@ -151,16 +146,10 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
     }
 
     private void handleRequest(int sender, int counter) {
-        if (requestNumbers[0] == -1) {
-            initLocalCounters();
-        }
-
+        
         LOGGER.info("Received request from " + sender + " counter " + counter);
+        checkValidCounters(sender);
         requestNumbers[sender] = counter;
-
-        if (token == null) {
-            token = new Token(numprocesses);
-        }
 
         if (holdsToken && requestNumbers[sender] > token.getValue(sender)) {
             holdsToken = false;
@@ -214,9 +203,9 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
         
         holdsToken = true;
         enterCS();
-        LOGGER.info("Leaving CS");
         
-        token.setValue(pid, requestNumbers[pid]);
+        this.token = token;
+        this.token.setValue(pid, requestNumbers[pid]);
 
         int counter = pid + 1;
         while (counter != pid) {
@@ -236,12 +225,34 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
                 }
                 break;
             }
-
-            if (counter == numprocesses) {
+            
+            // subtract 1 as pids start at 0 but numprocesses at 1.
+            if (counter == numprocesses - 1) {
                 counter = 0;
-            }
+            } else {
+                counter++;
+            }     
         }
     }
-   
     
+    /**
+     * If a new process has been added to the registry, but is not present in the local array yet and token, update 
+     * both by copying existing values and creating new indeices for new processes.
+     * @param id
+     */
+    private void checkValidCounters(int id) {
+        if (requestNumbers.length < id + 1) {
+            int[] temp = new int[id + 1];
+            Arrays.fill(temp, 0);
+            for (int i = 0; i < requestNumbers.length; i++) {
+                temp[i] = requestNumbers[i];
+            }
+            requestNumbers = temp;
+            numprocesses = requestNumbers.length;
+        }
+
+        if (token.getLength() < id + 1) {
+            token = new Token(token, id + 1);
+        }
+    }
 }

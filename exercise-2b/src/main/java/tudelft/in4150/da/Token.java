@@ -21,15 +21,17 @@ public class Token implements Serializable {
     }
 
     /**
-     * Token copy constructor.
+     * Token copy constructor with new LN length.
      *
      * @param token
      */
-    public Token(Token token) {
-        LN = new int[token.LN.length];
+    public Token(Token token, int length) {
+        int[] temp = new int[length];
+        Arrays.fill(temp, 0);
         for (int i = 0; i < token.LN.length; i++) {
-            this.LN[i] = token.LN[i];
+            temp[i] = token.LN[i];
         }
+        LN = temp;
     }
 
     /**
@@ -56,6 +58,10 @@ public class Token implements Serializable {
     @Override
     public String toString() {
         return Arrays.toString(LN);
+    }
+
+    public int getLength() {
+        return LN.length;
     }
 
 }
