@@ -8,6 +8,7 @@ import java.rmi.registry.Registry;
 import java.rmi.server.ExportException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.Arrays;
+import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -19,6 +20,7 @@ import org.apache.logging.log4j.Logger;
 public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasamiRMI {
     private static final long serialVersionUID = 1L;
     private static final Logger LOGGER = LogManager.getLogger(DASuzukiKasami.class);
+    private static final int CSTime = 1000;
     private int pid;
     private int port;
     private String ip;
@@ -108,9 +110,11 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
      */
     private void enterCS() {
         LOGGER.info("Entering CS");
+        Random rand = new Random(System.currentTimeMillis());
+        int delay = Math.abs(rand.nextInt()) % CSTime;
         
         try {
-            Thread.sleep(1000);
+            Thread.sleep(delay);
             LOGGER.info("Leaving CS");
         } catch (InterruptedException e) {
             LOGGER.error("Interrupted exception during CS");
@@ -139,23 +143,25 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
      * @param counter
      */
     public void receiveRequest(int sender, int counter) throws RemoteException {
-        if (sender > numprocesses - 1) {
-            LOGGER.info("Rejecting request from " + sender + ", not registered in time.");
-        } else {
-            executor.submit(new Runnable() {
-                @Override
-                public void run() {
-                    handleRequest(sender, counter);
-                }
-            });
-        }
+        executor.submit(new Runnable() {
+            @Override
+            public void run() {
+                handleRequest(sender, counter);
+            }
+        });
     }
 
     private void handleRequest(int sender, int counter) {
         LOGGER.info("Received request from " + sender + " counter " + counter);
 
+        // If local counter has not been initialized yet.
         if (requestNumbers[0] == -1) {
             initLocalCounters();
+        }
+
+        // If a process that regitsered after initial waiting period attempts requests, reject it.
+        if (sender > numprocesses - 1) {
+            LOGGER.info("Rejecting request from " + sender + ", not registered in time.");
         }
         requestNumbers[sender] = counter;
 
@@ -211,28 +217,33 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
         int counter = pid + 1;
         while (counter != pid) {
 
-            if (requestNumbers[counter] > token.getValue(counter)) {
-                holdsToken = false;
-                Registry registry;
-                try {
-                    registry = LocateRegistry.getRegistry(ip, port);
-                    DASuzukiKasamiRMI stub = (DASuzukiKasamiRMI) registry.lookup("rmi:://" + ip + "/process-" + sender);
-                    LOGGER.info("Sending token to rmi:://" + ip + "/process-" + sender);
-                    stub.receiveToken(this.pid, token);
-                } catch (RemoteException e) {
-                    LOGGER.error("Remote exception sending token.");
-                } catch (NotBoundException e) {
-                    LOGGER.error("Not bound exception sending token.");
-                }
-                break;
-            }
-            
-            // subtract 1 as pids start at 0 but numprocesses at 1.
             if (counter == numprocesses - 1) {
                 counter = 0;
             } else {
-                counter++;
-            }     
+
+                if (requestNumbers[counter] > token.getValue(counter)) {
+                    holdsToken = false;
+                    Registry registry;
+                    try {
+                        registry = LocateRegistry.getRegistry(ip, port);
+                        DASuzukiKasamiRMI stub = (DASuzukiKasamiRMI) registry.lookup("rmi:://" + ip + "/process-" + sender);
+                        LOGGER.info("Sending token to rmi:://" + ip + "/process-" + sender);
+                        stub.receiveToken(this.pid, token);
+                    } catch (RemoteException e) {
+                        LOGGER.error("Remote exception sending token.");
+                    } catch (NotBoundException e) {
+                        LOGGER.error("Not bound exception sending token.");
+                    }
+                    break;
+                }
+                
+                // subtract 1 as pids start at 0 but numprocesses at 1.
+                if (counter == numprocesses - 1) {
+                    counter = 0;
+                } else {
+                    counter++;
+                } 
+            }    
         }
     }
     

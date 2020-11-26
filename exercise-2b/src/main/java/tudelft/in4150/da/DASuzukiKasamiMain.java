@@ -15,6 +15,7 @@ public final class DASuzukiKasamiMain {
     private static int numProcesses = 1; // Default 1 Process
     private static String ip = "localhost"; // Default ip of localhost
     private static int numRequests = 1;
+    private static final int DELAY = 4000;
 
     private DASuzukiKasamiMain() {
     }
@@ -53,22 +54,36 @@ public final class DASuzukiKasamiMain {
 
         // Sleep 5s, waiting for other to bind to the registry before starting to send messages.
         try {
-            LOGGER.info("Waiting 5s for other processes to bind to rmi");
-            Thread.sleep(5000);
+            LOGGER.info("Waiting 10s for other processes to bind to rmi");
+            Thread.sleep(10000);
         } catch (InterruptedException e1) {
             LOGGER.error("Interrupted Exception");
             e1.printStackTrace();
         }
 
+        for (int i = 0; i < numRequests; i++) {
+            Random rand = new Random(System.currentTimeMillis());
+            int index = Math.abs(rand.nextInt()) % numProcesses;
+            int delay = Math.abs(rand.nextInt()) % DELAY;
 
-        Random rand = new Random(System.currentTimeMillis());
-        int index = Math.abs(rand.nextInt()) % numProcesses;
+            try {
+                Thread.sleep(delay);
+            } catch (InterruptedException e1) {
+                LOGGER.error("Interrupted Exception");
+                e1.printStackTrace();
+            }
+            localProcesses[index].requestCS();
 
-        // TODO TEMP add some random time delay between requests
-        localProcesses[index].requestCS();
+        }
 
-        // TODO if (initialized == 1) clean up registry
+        try {
+            LOGGER.info("Sleeping 10s for other processes to finish before exiting");
+            Thread.sleep(10000);
+        } catch (InterruptedException e1) {
+            LOGGER.error("Interrupted Exception");
+            e1.printStackTrace();
+        }
 
-        // System.exit(0);
+        System.exit(0);
     }
 }
