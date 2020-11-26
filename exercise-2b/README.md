@@ -1,6 +1,7 @@
 # Suzuki-Kasami Algorithm
 
-Exercise 2B for Distributed Algorithms (IN4150), implementing the Suzuki-Kasami algorithm for ....
+Exercise 2B for Distributed Algorithms (IN4150), implementing the Suzuki-Kasami algorithm for mutual exclusion in 
+distributed systems.
 
 To build the .jar file, execute from the current directory,
 
@@ -29,3 +30,13 @@ intervals.
 
 ## Program
 
+Running the program with multiple instances (executing the .jar file) creates multiple JVM instances which 
+all communicate to each other over RMI to exchange a token to enter their critical section. With the above provided
+command line arguments, all instances will attempt to create the RMI registry, but only one will succeed and then
+each process binds to the port. Each process has a seperate thread for executing the actual work of handling requests,
+accessing the CS, and sending the token. When binding, each process checks if they are the first to bind and if so, 
+they hold the token. Then each instance waits for 10 seconds for other processes to bind, before starting to send 
+request to access the critical section at random rime intervals for 2 times. Output will log which request was received
+by whom and to whom tokens are send, as well as when a process is entering and leaving its CS. After completing 
+ones own CS requests, the process will wait 10 seconds for other process, in case they request the CS and it is holding
+the token, before exiting.

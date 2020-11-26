@@ -6,6 +6,8 @@ Point-to-point message exchange with the Schiper-Eggli-Sandoz algorithm to ensur
 
 ## Exercise 2B: Suzuki’s and Kasami’s Algorithm
 
+Algorithm for mututal exclusion in distributed systems.
+
 ## Exercise 3B:
 
 # Build
