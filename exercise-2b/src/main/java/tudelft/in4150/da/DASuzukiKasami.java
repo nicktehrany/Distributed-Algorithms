@@ -4,11 +4,11 @@ import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.rmi.server.ExportException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-
+import java.util.Random;
+import java.util.concurrent.ExecutorService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -16,45 +16,49 @@ import org.apache.logging.log4j.Logger;
  * Algorithms main class that implements the RMI interface and provides
  * additonal functionality for bootstraping processes and servers.
  */
-public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasamiRMI, Runnable {
+@SuppressWarnings("checkstyle:hiddenfield")
+public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasamiRMI {
     private static final long serialVersionUID = 1L;
     private static final Logger LOGGER = LogManager.getLogger(DASuzukiKasami.class);
-    private int id;
+    private static final int CSTIME = 1000;
+    private int pid;
     private int port;
-    private int[] allocation;
-    private boolean token;
-    private VectorClock vectorClock;
-    private final Map<Integer, Message> messageBuffer;
-    private final Map<Integer, VectorClock> localBuffer;
+    private String ip;
+    private ExecutorService executor;
+    private boolean holdsToken;
+    private String rmiBind = "rmi:://";
+    private int[] requestNumbers;
+    private Token token;
+    private int numprocesses;
 
     /**
-     * Constructor of a single process with an identifier and a port to bind to.
-     *
-     * @param pid
+     * Constructor method to bind process to the rmi registry on provided port and ip.
+     * @param ip
      * @param port
-     * @param allocation
-     * @param token
+     * @param executor
      * @throws RemoteException
      */
-    public DASuzukiKasami(int pid, int port, int[] allocation, boolean token) throws RemoteException {
-        this.id = pid;
-        this.port = port;
-        this.allocation = allocation;
-        this.token = token;
-        localBuffer = new HashMap<Integer, VectorClock>();
-        messageBuffer = new HashMap<Integer, Message>();
+    public DASuzukiKasami(String ip, int port, ExecutorService executor) throws RemoteException {
+        try {
+            Registry registry = LocateRegistry.getRegistry(ip, port);
+            this.pid = registry.list().length;
+            LOGGER.debug("Binding process " + pid + " to port " + port);
+            rmiBind += ip + "/process-" + pid;
+            registry.bind(rmiBind, this);
+        } catch (RemoteException e) {
+            LOGGER.error("Remote exception when binding process " + pid);
+            e.printStackTrace();
+        } catch (AlreadyBoundException e) {
+            LOGGER.error(pid + "already bound to registry on port " + port);
+            e.printStackTrace();
+        }
 
-        // try {
-        // Registry registry = LocateRegistry.getRegistry("localhost", port);
-        // LOGGER.debug("Binding process " + id + " to port " + port);
-        // registry.bind("process-" + id, this);
-        // } catch (RemoteException e) {
-        // LOGGER.error("Remote exception when binding process " + id);
-        // e.printStackTrace();
-        // } catch (AlreadyBoundException e) {
-        // LOGGER.error(id + "already bound to registry on port " + port);
-        // e.printStackTrace();
-        // }
+        requestNumbers = new int[1];
+        requestNumbers[0] = -1;
+
+        this.ip = ip;
+        this.port = port;
+        this.executor = executor;
     }
 
     /**
@@ -63,11 +67,15 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
      * @param port Port on which RMI registry is created.
      */
     public static void initRegistry(int port) {
-        // Setup RMI registry
+
+        // Setup RMI regisrty
         try {
             java.rmi.registry.LocateRegistry.createRegistry(port);
+        } catch (ExportException e) {
+            LOGGER.debug("Registry already intialized");
         } catch (RemoteException e) {
-            e.printStackTrace();
+            LOGGER.debug("Remote Exception initializing registry");
+            e.getStackTrace();
         }
 
         // Setup security manager.
@@ -77,229 +85,185 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
     }
 
     /**
-     * Request the token at all other points via the RMI interface, with or without
-     * delay.
-     *
-     * @param sender
-     * @param message
-     * @param delay
-     * @throws RemoteException
+     * Request the token to access the CS by broadcasting the request.
      */
-    public synchronized void requestToken(int sender, Message message, int delay) throws RemoteException {
-        // No need to request token if already in possession by thread
-        if (this.token) {
-            return;
+    public void requestCS() {
+        LOGGER.info(this.pid + " requesting CS");
+
+        // Checking if RN has been initialized.
+        if (requestNumbers[0] == -1) {
+            initLocalCounters();
         }
 
-        Registry registry = LocateRegistry.getRegistry(port);
+        requestNumbers[this.pid]++;
+
         try {
-            // Increment sequence number
-            int curValue = this.allocation[this.id];
-            this.allocation[this.id] = curValue++;
-            LOGGER.info(this.id + " allocation array: " + Arrays.toString(this.allocation));
-
-            // TODO: HERE A LOOP TO CALL ALL OTHER PROCESSES EXCEPT ITSELF
-            DASuzukiKasamiRMI stub = (DASuzukiKasamiRMI) registry.lookup("process-" + receiver);
-
-            vectorClock.incClock(id);
-            message.setTimestamp(vectorClock);
-            message.setBuffer(localBuffer);
-
-            if (delay > 0) {
-                LOGGER.info(this.id + " token request to " + receiver + " with delay " + delay + "ms");
-
-                // Make copy of message before creating thread to avoid current thread overwriting the contents.
-                Message messageCopy = new Message(message); // TODO: message should contain: this.allocation[sender] + 1;
-                Thread thread = new Thread(() -> run(stub, id, messageCopy, delay));
-                thread.start();
-            } else {
-                LOGGER.info(this.id + " token request " + receiver + " " + message);
-                stub.receiveTokenRequest(id, message);
+            Registry registry = LocateRegistry.getRegistry(ip, port);
+            String[] registeredProcesses = registry.list();
+            for (String process : registeredProcesses) {
+                DASuzukiKasamiRMI stub = (DASuzukiKasamiRMI) registry.lookup(process);
+                stub.receiveRequest(this.pid, requestNumbers[this.pid]);
             }
-
-            // Construct pair of id and timestamp to add to own local localBuffer.
-            // Using a copy of VectorClock as it is passed by reference into hashmap.
-            VectorClock bufferTimestamp = new VectorClock(vectorClock);
-            addBuffer(receiver, bufferTimestamp);
+        } catch (RemoteException e) {
+            LOGGER.error("Remote Exception");
+            e.printStackTrace();
         } catch (NotBoundException e) {
-            LOGGER.error("Unable to locate process " + receiver);
-            e.printStackTrace();
+            LOGGER.error("Unbound process exception");
         }
     }
 
     /**
-     * Implementing the RMI interface function of receiving a message from another process.
-     *
-     * @param sender
-     * @param message
-     * @throws RemoteException
+     * Submiting simulation of CS to thread by sleeping random time.
      */
-    public synchronized void receiveTokenRequest(int sender, Message message) throws RemoteException {
-        LOGGER.info(this.id + " received token request from " + sender + ", token value: " + this.token);
-
-        if (deliveryCondition(message)) {
-            if (this.token) {
-                // Update allocation array, message should contain integer with new value
-                if (this.allocation[sender] < message + 1) {
-                    this.allocation[sender] = message + 1;
-                } else {
-                    // No token will be send since request is not accepted
-                    return;
-                }
-
-                if (inCritalSection) {
-                    // Wait untill done
-                }
-
-                this.sendToken(sender);
-            }
-
-            deliver(sender, message);
-            checkMessageBuffer();
-        } else {
-            LOGGER.info("Delivery condition not met, adding message to localBuffer.");
-            messageBuffer.put(sender, message);
-        }
-    }
-
-    /**
-     * Implementing the RMI interface function of receiving a token request from
-     * another process.
-     *
-     * @param sender
-     * @throws RemoteException
-     */
-    public synchronized void sendToken(int sender) throws RemoteException {
-        LOGGER.info(this.id + " sends token to " + sender);
-        LOGGER.info(this.id + " allocation array: " + Arrays.toString(this.allocation));
-
-        //TODO: set token send message
-        if (deliveryCondition(message)) {
-            if (this.token) {
-                //TODO send token
-                this.token = false;
-            }
-
-            deliver(sender, message);
-            checkMessageBuffer();
-        } else {
-            LOGGER.info("Delivery condition not met, adding message to localBuffer.");
-            messageBuffer.put(sender, message);
-        }
-    }
-
-    /**
-     * Add a timestamp and associated process identifier to a processes' local
-     * buffer.
-     *
-     * @param processID
-     * @param bufferTimestamp
-     */
-    private synchronized void addBuffer(int processID, VectorClock bufferTimestamp) {
-
-        if (localBuffer.containsKey(processID)) {
-            VectorClock element = localBuffer.get(processID);
-            element.setMax(bufferTimestamp); // element is used by ref, hence no need to place it into hasmap again.
-        } else {
-            localBuffer.put(processID, bufferTimestamp);
-        }
-    }
-
-    private synchronized void checkMessageBuffer() {
-        LOGGER.info("Checking message buffer.");
-        for (Map.Entry<Integer, Message> buffer : messageBuffer.entrySet()) {
-            Message message = buffer.getValue();
-            if (deliveryCondition(message)) {
-                deliver(buffer.getKey(), message);
-                messageBuffer.remove(buffer.getKey());
-            }
-        }
-    }
-
-    /**
-     * Delivery condition met if there does not exist a vector clock of the
-     * receiving process in the message localBuffer, or there exists a vector clock
-     * of the receiving process in the message localBuffer and its local localBuffer
-     * >= the clock in the message localBuffer.
-     *
-     * @param message
-     * @return
-     */
-    private synchronized boolean deliveryCondition(Message message) {
-        if (!message.getBuffer().containsKey(id) || vectorClock.greaterEqual(message.getBuffer().get(id))) {
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Deliver the actual message by adding the buffer from the message into own and
-     * adjusting own VectorClock.
-     *
-     * @param message
-     */
-    private synchronized void deliver(int sender, Message message) {
-        LOGGER.info("Delivery condition met, delivering message from sender " + sender + " to " + id);
-
-        for (Map.Entry<Integer, VectorClock> buffer : message.getBuffer().entrySet()) {
-            if (buffer.getKey() != id) {
-                addBuffer(buffer.getKey(), buffer.getValue());
-            }
-        }
-
-        vectorClock = new VectorClock(message.getTimestamp());
-        vectorClock.incClock(id); // Increase own clock since message was delivered.
-    }
-
-    /**
-     * Helper function to retrieve processes' identifier.
-     *
-     * @return int
-     */
-    public synchronized int getId() {
-        return this.id;
-    }
-
-    @Override
-    public void run() {
-        LOGGER.debug("Starting thread " + this.id);
-        try {
-            java.lang.Thread.currentThread().join();
-        } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * Runnable function for thread to deliver delayed message by sleeping delay time before calling rmi function.
-     *
-     * @param stub
-     * @param sender
-     * @param message
-     * @param delay
-     */
-    public void run(DASuzukiKasamiRMI stub, int sender, Message message, int delay) {
-        LOGGER.debug("Starting Runnable");
+    private void enterCS() {
+        LOGGER.info("Entering CS");
+        Random rand = new Random(System.currentTimeMillis());
+        int delay = Math.abs(rand.nextInt()) % CSTIME;
 
         try {
             Thread.sleep(delay);
-            stub.receiveTokenRequest(sender, message);
+            LOGGER.info("Leaving CS");
         } catch (InterruptedException e) {
-            LOGGER.error("Interrupted thread during delay simulation.");
-            e.printStackTrace();
+            LOGGER.error("Interrupted exception during CS");
+        }
+    }
+
+    /**
+     * Each process checks if it is first in the rmi registry list and if so gets assigned the token.
+     */
+    public void assignToken() {
+        try {
+            String[] registeredProcesses = LocateRegistry.getRegistry(port).list();
+            if (rmiBind.equals(registeredProcesses[0])) {
+                this.holdsToken = true;
+                LOGGER.info("Process " + pid + " holds the token first");
+            }
         } catch (RemoteException e) {
-            LOGGER.error("Remote exception when sending message " + message);
+            LOGGER.error("Remote Exception");
             e.printStackTrace();
         }
     }
 
     /**
-     * Helper function to retrieve the messageBuffer for unit testing.
-     *
-     * @return
+     * Wrapper method to create runnable of request and submit to worker thread.
+     * @param sender
+     * @param counter
      */
-    public Map<Integer, Message> getMessageBuffer() {
-        return messageBuffer;
+    public void receiveRequest(int sender, int counter) throws RemoteException {
+        executor.submit(new Runnable() {
+            @Override
+            public void run() {
+                handleRequest(sender, counter);
+            }
+        });
+    }
+
+    private void handleRequest(int sender, int counter) {
+        LOGGER.info("Received request from " + sender + " counter " + counter);
+
+        // If local counter has not been initialized yet.
+        if (requestNumbers[0] == -1) {
+            initLocalCounters();
+        }
+
+        // If a process that regitsered after initial waiting period attempts requests, reject it.
+        if (sender > numprocesses - 1) {
+            LOGGER.info("Rejecting request from " + sender + ", not registered in time.");
+        }
+        requestNumbers[sender] = counter;
+
+        // If first process holds token and token has not been created, create it.
+        if (holdsToken && token == null) {
+            token = new Token(numprocesses);
+        }
+
+        if (holdsToken && requestNumbers[sender] > token.getValue(sender)) {
+            holdsToken = false;
+            this.token.enqueue(sender);
+            sendToken();
+        }
+    }
+
+    /**
+     * Receive the token over rmi and create a runnable of handling the token for worker thread.
+     *
+     * @param sender
+     * @param token
+     */
+    public void receiveToken(int sender, Token token) throws RemoteException {
+        executor.submit(new Runnable() {
+            @Override
+            public void run() {
+                handleToken(sender, token);
+            }
+        });
+    }
+
+    /**
+     * Handle the received token, enter own CS, and send token to next requesting process.
+     * @param sender
+     * @param token
+     */
+    private void handleToken(int sender, Token token) {
+        LOGGER.info(pid + " received token from " + sender + " " + token.getRequests());
+
+        holdsToken = true;
+        enterCS();
+
+        this.token = token;
+        this.token.setValue(pid, requestNumbers[pid]);
+
+        int counter = (pid + 1) % numprocesses;
+        boolean iterate = true;
+        while (iterate) {
+            if (requestNumbers[counter] > token.getValue(counter)) {
+                holdsToken = false;
+                this.token.enqueue(counter);
+            }
+
+            if (counter == pid) {
+                iterate = false;
+            }
+            counter = (counter + 1) % numprocesses;
+        }
+        if (!this.token.queueIsEmpty()) {
+            sendToken();
+        }
+    }
+
+    /**
+     * If the requestNumbers counter has not been initialized yet count the number of processes in the rmi registry and
+     * initialize requestNumbers.
+     */
+    private void initLocalCounters() {
+        Registry registry;
+        try {
+            registry = LocateRegistry.getRegistry(ip, port);
+
+            // Remeber the number of processes in the rmi for later.
+            numprocesses = registry.list().length;
+        } catch (RemoteException e) {
+            LOGGER.error("Remote Exception when connecting to RMI");
+        }
+        requestNumbers = new int[numprocesses];
+        Arrays.fill(requestNumbers, 0);
+    }
+
+    /**
+     * Sending the token to the head of the token queue over rmi.
+     */
+    private void sendToken() {
+        int receiver = this.token.getQueueHead();
+        Registry registry;
+        try {
+            registry = LocateRegistry.getRegistry(ip, port);
+            DASuzukiKasamiRMI stub = (DASuzukiKasamiRMI) registry.lookup("rmi:://" + ip + "/process-" + receiver);
+            LOGGER.info("Sending token to rmi:://" + ip + "/process-" + receiver);
+            stub.receiveToken(this.pid, token);
+        } catch (RemoteException e) {
+            LOGGER.error("Remote exception sending token.");
+        } catch (NotBoundException e) {
+            LOGGER.error("Not bound exception sending token.");
+        }
     }
 }

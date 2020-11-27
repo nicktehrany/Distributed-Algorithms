@@ -1,82 +1,92 @@
 package tudelft.in4150.da;
 
 import java.rmi.RemoteException;
-import java.util.Arrays;
-
+import java.util.Random;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
- * Main class that creates servers and builds rmi registry using the DASchiperEggliSandoz class.
+ * Main class that creates servers and builds rmi registry using the
+ * DASuzukiKasamiMain class.
  */
 public final class DASuzukiKasamiMain {
     private static final Logger LOGGER = LogManager.getLogger(DASuzukiKasamiMain.class);
-    private static final int PORT = 1098;
-    private static final int NUMPROCESSES = 3;
+    private static int port = 1098; // Default Port
+    private static int numProcesses = 1; // Default 1 Process
+    private static String ip = "localhost"; // Default ip of localhost
+    private static int numRequests = 1;
+    private static final int DELAY = 4000;
+    private static final int WAIT = 10000;
 
     private DASuzukiKasamiMain() {
     }
 
     /**
-     * Example execution with 3 processes (P1, P2, and P3).
-     * P1 sends m1 -> P2 with 2000ms delay.
-     * P1 sends m2 -> P3 with no delay.
-     * P3 sends m3 -> P2 with no delay.
-     *
      * @return
      * @param args The arguments of the program.
      */
     public static void main(String[] args) {
+        Process[] localProcesses;
 
-        // Init the RMI registry and create processes.
-        final int delay = 2000;
-        int[] allocation = new int [3];
-        Arrays.fill(allocation, 0);
+        for (String arg : args) {
+            if (arg.startsWith("-proc=")) {
+                numProcesses = Integer.parseInt(arg.replaceAll("-proc=", ""));
+            } else if (arg.startsWith("-port=")) {
+                port = Integer.parseInt(arg.replaceAll("-port=", ""));
+            } else if (arg.startsWith("-ip=")) {
+                ip = arg.replaceAll("-ip=", "");
+            } else if (arg.startsWith("-reqs=")) {
+                numRequests = Integer.parseInt(arg.replaceAll("-reqs=", ""));
+            }
+        }
 
-        //TODO: INIT REGISTRY
+        // Attempt to initialize the RMI registry.
+        DASuzukiKasami.initRegistry(port);
 
+        // Create all local processes.
+        localProcesses = new Process[numProcesses];
+        for (int i = 0; i < localProcesses.length; i++) {
+            try {
+                localProcesses[i] = new Process(ip, port);
+            } catch (RemoteException e) {
+                LOGGER.error("Remote exception creating process");
+                e.printStackTrace();
+            }
+        }
+
+        // Sleep 10s, waiting for other to bind to the registry before starting to send messages.
         try {
-            Process p1 = new Process(PORT, true, allocation);
-            Process p2 = new Process(PORT, false, allocation);
-            Process p3 = new Process(PORT, false, allocation);
-
-            p3.requestToken();
-            p3.wait(2000); // Emulate critical section
-
-            p2.requestToken();
-
-
-        } catch (RemoteException | InterruptedException e1) {
-            // TODO Auto-generated catch block
+            LOGGER.info("Waiting 10s for other processes to bind to rmi");
+            Thread.sleep(WAIT);
+        } catch (InterruptedException e1) {
+            LOGGER.error("Interrupted Exception");
             e1.printStackTrace();
         }
 
-        LOGGER.debug(java.lang.Thread.activeCount());
-        // Send some messages.
-        // try {
-        //     // Process 0 will get the token (by default)
-        //     processes[0].send(processes[1].getId(), new Message(NUMPROCESSES), delay);
+        for (int i = 0; i < numRequests; i++) {
+            Random rand = new Random(System.currentTimeMillis());
+            int index = Math.abs(rand.nextInt()) % numProcesses;
+            int delay = Math.abs(rand.nextInt()) % DELAY;
 
-        //     // Process 2 requests the token
-        //     //processes[2].requestToken(NUMPROCESSES, new Message(NUMPROCESSES), 0);
-        //     //processes[2].wait(2000); //Simulates Mutual Exclusion process
+            try {
+                Thread.sleep(delay);
+            } catch (InterruptedException e1) {
+                LOGGER.error("Interrupted Exception");
+                e1.printStackTrace();
+            }
+            localProcesses[index].requestCS();
 
-        //     // Process 3 request the token, but still in use by 2
-        //     //processes[3].requestToken(NUMPROCESSES, new Message(NUMPROCESSES), 0);
-        //     //processes[3].wait(2000); //Simulates Mutual Exclusion process
-
-        // } catch (RemoteException e) {
-        //     LOGGER.error("Remote exception sending messages.");
-        //     e.printStackTrace();
-        // }
-
-        // Sleep until all delays are finished to quit program.
-        try {
-            Thread.sleep(delay);
-        } catch (InterruptedException e) {
-            LOGGER.error("Interrupt exception.");
-            e.printStackTrace();
         }
+
+        // Sleep 10s in canse other processes still send requests.
+        try {
+            LOGGER.info("Wait 10s for other processes to finish before exiting");
+            Thread.sleep(WAIT);
+        } catch (InterruptedException e1) {
+            LOGGER.error("Interrupted Exception");
+            e1.printStackTrace();
+        }
+
         System.exit(0);
     }
 }
