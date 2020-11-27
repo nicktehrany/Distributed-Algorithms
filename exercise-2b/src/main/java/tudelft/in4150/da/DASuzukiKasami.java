@@ -250,6 +250,9 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
         Arrays.fill(requestNumbers, 0);
     }
 
+    /**
+     * Sending the token to the head of the token queue over rmi.
+     */
     private void sendToken() {
         int receiver = this.token.getQueueHead();
         Registry registry;
@@ -261,7 +264,7 @@ public class DASuzukiKasami extends UnicastRemoteObject implements DASuzukiKasam
         } catch (RemoteException e) {
             LOGGER.error("Remote exception sending token.");
         } catch (NotBoundException e) {
-            LOGGER.error("Not bound exception sending token."); // TODO WHAT HAPPENS WITH TOKEN IF EXCEPTION?
+            LOGGER.error("Not bound exception sending token.");
         }
     }
 }
