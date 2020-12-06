@@ -8,8 +8,9 @@ Point-to-point message exchange with the Schiper-Eggli-Sandoz algorithm to ensur
 
 Algorithm for mututal exclusion in distributed systems.
 
-## Exercise 3B:
+## Exercise 3B: Minimum Weighted Spanning Tree of asynchronous weighted networks of Gallager, Humble, and Spira
 
+Algorithm for creating minimum weight spanning trees in an asynchronous network.
 # Build
 
 We are utilizing maven as project manegement tool and JUnit for unit testing. Each exercise contains some unit tests, 

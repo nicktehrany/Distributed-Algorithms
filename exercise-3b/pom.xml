@@ -1,7 +1,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>tudelft.in4150.da</groupId>
-  <artifactId>exercise-2b</artifactId>
+  <artifactId>exercise-3b</artifactId>
   <version>2.0</version>
   <properties>
     <maven.compiler.source>1.8</maven.compiler.source>
@@ -87,10 +87,10 @@
             <manifest>
               <addClasspath>true</addClasspath>
               <classpathPrefix>lib/</classpathPrefix>
-              <mainClass>tudelft.in4150.da.DASuzukiKasamiMain</mainClass>
+              <mainClass>tudelft.in4150.da.DAMinimumWeightedSpanningTree</mainClass>
             </manifest>
           </archive>
-          <finalName>DA-Suzuki-Kasami</finalName>     
+          <finalName>DAMinimumWeightedSpanningTree</finalName>     
         </configuration>
       </plugin>
       <plugin>
