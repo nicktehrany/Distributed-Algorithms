@@ -7,6 +7,7 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.ExportException;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -15,13 +16,16 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
     private static final long serialVersionUID = 1L;
     private static final Logger LOGGER = LogManager.getLogger(DAGallagerHumbleSpira.class);
     private int pid;
-    private int port;
+    private static int port;
     private String ip;
     private ExecutorService executor;
     private String rmiBind = "rmi:://";
+    private ArrayList<Node> adjNodes;
 
     /**
-     * Constructor method to bind process to the rmi registry on provided port and ip.
+     * Constructor method to bind process to the rmi registry on provided port and
+     * ip.
+     * 
      * @param ip
      * @param port
      * @param executor
@@ -46,11 +50,12 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
         // requestNumbers[0] = -1;
 
         this.ip = ip;
-        this.port = port;
+        DAGallagerHumbleSpira.port = port;
         this.executor = executor;
+        adjNodes = new ArrayList<Node>();
     }
 
-     /**
+    /**
      * Initialize the RMI registry.
      *
      * @param port Port on which RMI registry is created.
@@ -73,9 +78,36 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
         }
     }
 
+    public void createEdge(String node, Integer weight) {
+        adjNodes.add(new Node(node, weight));
+        LOGGER.debug("created edge for process-" + pid + " " + adjNodes.get(0).getNode() + " " + adjNodes.get(0).getWeight());
+    }
+
+    public static boolean nodeExists(String name) {
+        boolean found = false;
+
+        try {
+            String[] registeredProcesses = LocateRegistry.getRegistry(port).list();
+            for (String node : registeredProcesses) {
+                if (name.equals(node)) {
+                    found = true;
+                    break;
+                }
+            }
+        } catch (RemoteException e) {
+            LOGGER.error("Remote Exception");
+        }
+
+        return found;
+    }
+
     @Override
     public void receive(int sender) throws RemoteException {
         // TODO Auto-generated method stub
 
     }
+
+	public int getPid() {
+		return pid;
+	}
 }

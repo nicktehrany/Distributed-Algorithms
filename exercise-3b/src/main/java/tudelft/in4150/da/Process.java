@@ -25,7 +25,7 @@ public class Process {
     public Process(String ip, int port) throws RemoteException {
         executor = Executors.newSingleThreadExecutor();
         instance = new DAGallagerHumbleSpira(ip, port, executor);
-        // instance.assignToken();
+        pid = instance.getPid();
     }
 
     /**
@@ -54,6 +54,10 @@ public class Process {
             e.printStackTrace();
         }
         LOGGER.debug("Thread " + pid + " terminated");
+    }
+
+    public void assignEdge(String node, Integer weight) {
+        instance.createEdge(node, weight);
     }
 
     public String getName() {

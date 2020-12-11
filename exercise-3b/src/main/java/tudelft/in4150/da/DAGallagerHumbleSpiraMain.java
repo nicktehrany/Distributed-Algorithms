@@ -56,7 +56,7 @@ public final class DAGallagerHumbleSpiraMain {
 
         parseConf();
 
-        // TODO cleanup processes
+        // TODO cleanup all processes
         localProcesses[0].terminate();
         System.exit(0);
     }
@@ -83,17 +83,20 @@ public final class DAGallagerHumbleSpiraMain {
     private static void assignEdge(String assignment) {
         String[] assign = assignment.split("\\s+");
 
-        // TODO Error check before assign
-        Integer weight = Integer.parseInt(assign[1]);
-        for (Process p : localProcesses) {
-            String name = "rmi:://" + ip + "/" + p.getName();
+        // Ensuring edge weight is a positive integer
+        if (assign[1].matches("\\d+")) {
+            Integer weight = Integer.parseInt(assign[1]);
+            for (Process p : localProcesses) {
+                String name = "rmi:://" + ip + "/" + p.getName();
 
-            // Self edges are ignored
-            if ((name.equals(assign[0]) || name.equals(assign[2])) && 
-                !assign[0].equals(assign[2])) {
-
-                // TODO assign weight to edge
-                LOGGER.info("here");
+                // Self edges are ignored and checks if other node exists
+                if (name.equals(assign[0]) && !assign[0].equals(assign[2]) 
+                    && DAGallagerHumbleSpira.nodeExists(assign[2])) {
+                    p.assignEdge(assign[2], weight);
+                } else if (name.equals(assign[2]) && !assign[0].equals(assign[2])
+                    && DAGallagerHumbleSpira.nodeExists(assign[0])) {
+                    p.assignEdge(assign[0], weight);
+                }
             }
         }
     }
