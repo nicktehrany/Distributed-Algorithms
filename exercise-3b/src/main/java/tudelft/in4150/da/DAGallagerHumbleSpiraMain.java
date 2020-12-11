@@ -1,8 +1,6 @@
 package tudelft.in4150.da;
 
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -16,6 +14,7 @@ public final class DAGallagerHumbleSpiraMain {
     private static int numProcesses = 1; // Default 1 Process
     private static String ip = "localhost"; // Default ip of localhost
     private static String conffile = "/default.cfg";
+    private static Process[] localProcesses;
 
     private DAGallagerHumbleSpiraMain() {
     }
@@ -26,7 +25,6 @@ public final class DAGallagerHumbleSpiraMain {
      * @param args The arguments of the program.
      */
     public static void main(String[] args) {
-        Process[] localProcesses;
 
         for (String arg : args) {
             if (arg.startsWith("-proc=")) {
@@ -57,6 +55,8 @@ public final class DAGallagerHumbleSpiraMain {
         }
 
         parseConf();
+
+        // TODO cleanup processes
         localProcesses[0].terminate();
         System.exit(0);
     }
@@ -72,11 +72,29 @@ public final class DAGallagerHumbleSpiraMain {
         BufferedReader reader = new BufferedReader(streamReader);
         try {
             for (String line; (line = reader.readLine()) != null;) {
-                LOGGER.info(line);
+                assignEdge(line);
             }
         } catch (IOException e) {
             LOGGER.error("I/O Exception");
             e.printStackTrace();
+        }
+    }
+
+    private static void assignEdge(String assignment) {
+        String[] assign = assignment.split("\\s+");
+
+        // TODO Error check before assign
+        Integer weight = Integer.parseInt(assign[1]);
+        for (Process p : localProcesses) {
+            String name = "rmi:://" + ip + "/" + p.getName();
+
+            // Self edges are ignored
+            if ((name.equals(assign[0]) || name.equals(assign[2])) && 
+                !assign[0].equals(assign[2])) {
+
+                // TODO assign weight to edge
+                LOGGER.info("here");
+            }
         }
     }
 }

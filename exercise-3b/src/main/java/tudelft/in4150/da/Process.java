@@ -55,4 +55,8 @@ public class Process {
         }
         LOGGER.debug("Thread " + pid + " terminated");
     }
+
+    public String getName() {
+        return "process-" + pid;
+    }
 }
