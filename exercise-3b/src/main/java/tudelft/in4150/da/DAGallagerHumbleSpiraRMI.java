@@ -4,5 +4,5 @@ import java.rmi.Remote;
 import java.rmi.RemoteException;
 
 public interface DAGallagerHumbleSpiraRMI extends Remote {
-    void connect(int level, String sender) throws RemoteException;
+    void receive(Message message) throws RemoteException;
 }

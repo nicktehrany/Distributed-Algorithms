@@ -121,7 +121,7 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
             Registry registry = LocateRegistry.getRegistry(ip, port);
             DAGallagerHumbleSpiraRMI stub = (DAGallagerHumbleSpiraRMI) registry.lookup(minEdge.getNode());
             LOGGER.info("Sending connect to " + minEdge.getNode());
-            stub.connect(0, rmiBind);
+            stub.receive(new Connect(0, rmiBind));
         } catch (RemoteException e) {
             LOGGER.error("Remote Exception");
             e.printStackTrace();
@@ -135,22 +135,24 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
      * @param level
      * @param sender
      */
-    public void connect(int level, String sender) throws RemoteException {
+    public void receive(Message message) throws RemoteException {
         executor.submit(new Runnable() {
             @Override
             public void run() {
-                handleConnect(level, sender);
+                if (message.mType == Message.Type.Connect) {
+                    handleConnect((Connect) message);
+                }
             }
         });
     }
 
-    public void handleConnect(int level, String sender) {
+    public void handleConnect(Connect message) {
         LOGGER.info(rmiBind + " received connect");
         if (state == State.sleeping) {
             wakeup();
         }
         
-        Edge j = findEdge(sender);
+        Edge j = findEdge(message.getSender());
         if (level < this.level) {
             // TODO send initiate
 
