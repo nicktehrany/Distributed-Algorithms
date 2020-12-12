@@ -1,6 +1,6 @@
 package tudelft.in4150.da;
 
-public class Node {
+public class Edge {
     private String node;
     private Integer weight;
     public adjState state;
@@ -11,7 +11,7 @@ public class Node {
         not_in_MST
     }
 
-    public Node(String name, Integer weight) {
+    public Edge(String name, Integer weight) {
         node = name;
         this.weight = weight;
         state = adjState.Q_in_MST;

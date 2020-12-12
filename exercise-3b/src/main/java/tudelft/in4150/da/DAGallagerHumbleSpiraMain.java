@@ -15,6 +15,7 @@ public final class DAGallagerHumbleSpiraMain {
     private static String ip = "localhost"; // Default ip of localhost
     private static String conffile = "/default.cfg";
     private static Process[] localProcesses;
+    private static final int WAIT = 0; // TODO 10000;
 
     private DAGallagerHumbleSpiraMain() {
     }
@@ -54,11 +55,23 @@ public final class DAGallagerHumbleSpiraMain {
             }
         }
 
-        parseConf();
+        // Sleep 10s, waiting for other to bind to the registry before starting to initate algorithm.
+        try {
+            LOGGER.info("Waiting 10s for other processes to bind to rmi");
+            Thread.sleep(WAIT);
+        } catch (InterruptedException e1) {
+            LOGGER.error("Interrupted Exception");
+            e1.printStackTrace();
+        }
 
-        // TODO cleanup all processes
-        localProcesses[0].terminate();
-        System.exit(0);
+        parseConf();
+        //TODO TEMP
+        localProcesses[0].initiate();
+
+        // for (Process p : localProcesses) {
+        //     p.terminate();
+        // }
+        // System.exit(0);
     }
 
     private static void parseConf() {
@@ -91,10 +104,10 @@ public final class DAGallagerHumbleSpiraMain {
 
                 // Self edges are ignored and checks if other node exists
                 if (name.equals(assign[0]) && !assign[0].equals(assign[2]) 
-                    && DAGallagerHumbleSpira.nodeExists(assign[2])) {
+                    && DAGallagerHumbleSpira.nodeExists(assign[2], port)) {
                     p.assignEdge(assign[2], weight);
                 } else if (name.equals(assign[2]) && !assign[0].equals(assign[2])
-                    && DAGallagerHumbleSpira.nodeExists(assign[0])) {
+                    && DAGallagerHumbleSpira.nodeExists(assign[0], port)) {
                     p.assignEdge(assign[0], weight);
                 }
             }

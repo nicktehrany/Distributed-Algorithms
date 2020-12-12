@@ -35,7 +35,7 @@ public class Process {
         executor.submit(new Runnable() {
             @Override
             public void run() {
-                // instance.requestCS();
+                instance.wakeup();
             }
         });
     }
