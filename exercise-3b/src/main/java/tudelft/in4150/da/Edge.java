@@ -3,13 +3,7 @@ package tudelft.in4150.da;
 public class Edge {
     private String node;
     private Integer weight;
-    public adjState state;
-
-    enum adjState {
-        Q_in_MST,
-        in_MST,
-        not_in_MST
-    }
+    private adjState state;
 
     public Edge(String name, Integer weight) {
         node = name;
@@ -23,5 +17,13 @@ public class Edge {
 
     public Integer getWeight() {
         return weight;
+    }
+
+    public adjState getState() {
+        return state;
+    }
+
+    public void setState(adjState state) {
+        this.state = state;
     }
 }

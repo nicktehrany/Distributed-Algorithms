@@ -28,6 +28,8 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
     private int findCount = 0;
     private Queue<Message> messageQueue;
     private int fragmentName = 0;
+    private ArrayList<Edge> inBranch;
+    private Edge bestEdge;
 
     /**
      * Constructor method to bind process to the rmi registry on provided port and
@@ -59,6 +61,7 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
         adjNodes = new ArrayList<Edge>();
         state = State.sleeping;
         messageQueue = new LinkedList<Message>();
+        inBranch = new ArrayList<Edge>();
     }
 
     /**
@@ -113,7 +116,7 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
     public void wakeup() {
         LOGGER.info("Waking up " + rmiBind);
         Edge minEdge = getMinEdge();
-        minEdge.state = Edge.adjState.in_MST;
+        minEdge.setState(adjState.in_MST);
         state = State.found;
         send(new Connect(0, rmiBind), minEdge.getNode());
     }
@@ -143,30 +146,56 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
             public void run() {
                 if (message.mType == Message.Type.Connect) {
                     handleConnect((Connect) message);
+                } else if (message.mType == Message.Type.Initiate) {
+                    handleInitiate((Initiate) message);
                 }
             }
         });
     }
 
     public void handleConnect(Connect message) {
-        LOGGER.info(rmiBind + " received connect");
+        LOGGER.debug(rmiBind + " received connect");
         if (state == State.sleeping) {
             wakeup();
         }
         
         Edge j = findEdge(message.sender);
         if (level < this.level) {
-            findEdge(message.sender).state = Edge.adjState.in_MST; // ? Did sender also do this?
+            findEdge(message.sender).setState(adjState.in_MST); // ? Did sender also do this?
             send(new Initiate(this.level, fragmentName, state), message.sender);
             if (state == State.find) {
                 findCount++;
             }
         } else {
-            if (j.state == Edge.adjState.Q_in_MST) {
+            if (j.getState() == adjState.Q_in_MST) {
                 messageQueue.add(message);
             } else {
                 send(new Initiate(this.level + 1, findEdge(message.sender).getWeight(), State.find), message.sender);
             }
+        }
+    }
+
+    public void handleInitiate(Initiate message) {
+        LOGGER.debug(rmiBind + " received initiate");
+        level = message.getLevel();
+        fragmentName = message.getFragmentName();
+        state = message.getState();
+
+        Edge j = findEdge(message.sender);
+        inBranch.add(new Edge(message.sender, j.getWeight()));
+        bestEdge = new Edge(null, -1);
+
+        for (Edge e : adjNodes) {
+            if (e.getWeight() != j.getWeight() && e.getState() == adjState.in_MST) {
+                send(new Initiate(message.getLevel(), findEdge(message.sender).getWeight(), message.getState()),
+                    e.getNode());
+            }
+            if (state == State.find) {
+                findCount++;
+            }
+        }
+        if (state == State.find) {
+            // test();
         }
     }
 
