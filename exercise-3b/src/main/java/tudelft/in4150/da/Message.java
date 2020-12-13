@@ -10,7 +10,11 @@ public class Message implements Serializable {
     enum Type {
         Connect,
         Initiate,
-        Test
+        Test,
+        Report,
+        Accept,
+        Reject,
+        ChangeRoot
     }
 }
 
@@ -75,5 +79,43 @@ class Test extends Message {
 
     public int getFragmentName() {
         return fragmentName;
+    }
+}
+
+class Report extends Message {
+    private static final long serialVersionUID = 1L;
+    private int weight;
+
+    Report(int weight) {
+        this.weight = weight;
+        super.mType = Type.Report;
+    }
+
+    public int getWeight() {
+        return weight;
+    }
+}
+
+class Accept extends Message {
+    private static final long serialVersionUID = 1L;
+
+    Accept() {
+        super.mType = Type.Report;
+    }
+}
+
+class Reject extends Message {
+    private static final long serialVersionUID = 1L;
+
+    Reject() {
+        super.mType = Type.Report;
+    }
+}
+
+class ChangeRoot extends Message {
+    private static final long serialVersionUID = 1L;
+
+    ChangeRoot() {
+        super.mType = Type.ChangeRoot;
     }
 }
