@@ -9,7 +9,8 @@ public class Message implements Serializable {
 
     enum Type {
         Connect,
-        Initiate
+        Initiate,
+        Test
     }
 }
 
@@ -35,11 +36,12 @@ class Initiate extends Message {
     private int fragmentName;
     private State state;
 
-    Initiate(int level, int name, State state) {
+    Initiate(int level, int name, State state, String sender) {
         this.level = level;
         this.fragmentName = name;
         this.state = state;
         super.mType = Type.Initiate;
+        super.sender = sender;
     }
 
     public int getLevel() {
@@ -52,5 +54,26 @@ class Initiate extends Message {
 
     public State getState() {
         return state;
+    }
+}
+
+class Test extends Message {
+    private static final long serialVersionUID = 1L;
+    private int level;
+    private int fragmentName;
+
+    Test(int level, int name, String sender) {
+        this.level = level;
+        this.fragmentName = name;
+        super.mType = Type.Test;
+        super.sender = sender;
+    }
+
+    public int getLevel() {
+        return level;
+    }
+
+    public int getFragmentName() {
+        return fragmentName;
     }
 }

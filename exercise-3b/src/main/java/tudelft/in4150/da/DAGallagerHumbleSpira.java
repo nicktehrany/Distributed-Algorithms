@@ -30,6 +30,7 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
     private int fragmentName = 0;
     private ArrayList<Edge> inBranch;
     private Edge bestEdge;
+    private Edge testEdge;
 
     /**
      * Constructor method to bind process to the rmi registry on provided port and
@@ -115,7 +116,7 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
      */
     public void wakeup() {
         LOGGER.info("Waking up " + rmiBind);
-        Edge minEdge = getMinEdge();
+        Edge minEdge = getMinEdge(adjNodes);
         minEdge.setState(adjState.in_MST);
         state = State.found;
         send(new Connect(0, rmiBind), minEdge.getNode());
@@ -162,7 +163,7 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
         Edge j = findEdge(message.sender);
         if (level < this.level) {
             findEdge(message.sender).setState(adjState.in_MST); // ? Did sender also do this?
-            send(new Initiate(this.level, fragmentName, state), message.sender);
+            send(new Initiate(this.level, fragmentName, state, rmiBind), message.sender);
             if (state == State.find) {
                 findCount++;
             }
@@ -170,7 +171,8 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
             if (j.getState() == adjState.Q_in_MST) {
                 messageQueue.add(message);
             } else {
-                send(new Initiate(this.level + 1, findEdge(message.sender).getWeight(), State.find), message.sender);
+                send(new Initiate(this.level + 1, findEdge(message.sender).getWeight(), State.find, rmiBind),
+                    message.sender);
             }
         }
     }
@@ -180,27 +182,52 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
         level = message.getLevel();
         fragmentName = message.getFragmentName();
         state = message.getState();
-
+        
         Edge j = findEdge(message.sender);
         inBranch.add(new Edge(message.sender, j.getWeight()));
         bestEdge = new Edge(null, -1);
 
         for (Edge e : adjNodes) {
             if (e.getWeight() != j.getWeight() && e.getState() == adjState.in_MST) {
-                send(new Initiate(message.getLevel(), findEdge(message.sender).getWeight(), message.getState()),
-                    e.getNode());
+                send(new Initiate(message.getLevel(), findEdge(message.sender).getWeight(), message.getState(),
+                    rmiBind), e.getNode());
             }
             if (state == State.find) {
                 findCount++;
             }
         }
         if (state == State.find) {
-            // test();
+            test();
+        }
+    }
+
+    private void test() {
+        ArrayList<Edge> edges = getEdgesInQMST();
+        if (edges != null) {
+            testEdge = getMinEdge(edges);
+            send(new Test(level, fragmentName, rmiBind), testEdge.getNode());
+        } else {
+            testEdge = null;
+            // report();
         }
     }
 
     /**
-     * Finds the edge that is connected to the node with the specified name.
+     * Helper function that finds all edges in adjNodes that are in Q_in_MST state.
+     * @return ArrayList of Edge.
+     */
+    private ArrayList<Edge> getEdgesInQMST(){
+        ArrayList<Edge> edges = new ArrayList<Edge>();
+        for (Edge e : adjNodes) {
+            if (e.getState() == adjState.Q_in_MST) {
+                edges.add(e);
+            }
+        }
+        return edges;
+    }
+
+    /**
+     * Helper method that finds the edge that is connected to the node with the specified name.
      * @param node
      * @return Edge to node
      */
@@ -218,14 +245,15 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
 
 
     /**
-     * Finds the adjacent edge with the minimum weight.
+     * Helper method that finds the adjacent edge with the minimum weight.
+     * @param edges ArrayList of edges to find the minimum from.
      * @return Node with min weight.
      */
-    private Edge getMinEdge() {
+    private Edge getMinEdge(ArrayList<Edge> edges) {
         Edge minEdge = null;
-        if (!adjNodes.isEmpty()) {
-            minEdge = adjNodes.get(0);
-            for (Edge node : adjNodes) {
+        if (!edges.isEmpty()) {
+            minEdge = edges.get(0);
+            for (Edge node : edges) {
                 if (node.getWeight() < minEdge.getWeight()) {
                     minEdge = node;
                 }
