@@ -86,9 +86,10 @@ class Report extends Message {
     private static final long serialVersionUID = 1L;
     private int weight;
 
-    Report(int weight) {
+    Report(int weight, String sender) {
         this.weight = weight;
         super.mType = Type.Report;
+        super.sender = sender;
     }
 
     public int getWeight() {
@@ -99,23 +100,26 @@ class Report extends Message {
 class Accept extends Message {
     private static final long serialVersionUID = 1L;
 
-    Accept() {
-        super.mType = Type.Report;
+    Accept(String sender) {
+        super.mType = Type.Accept;
+        super.sender = sender;
     }
 }
 
 class Reject extends Message {
     private static final long serialVersionUID = 1L;
 
-    Reject() {
-        super.mType = Type.Report;
+    Reject(String sender) {
+        super.mType = Type.Reject;
+        super.sender = sender;
     }
 }
 
 class ChangeRoot extends Message {
     private static final long serialVersionUID = 1L;
 
-    ChangeRoot() {
+    ChangeRoot(String sender) {
         super.mType = Type.ChangeRoot;
+        super.sender = sender;
     }
 }
