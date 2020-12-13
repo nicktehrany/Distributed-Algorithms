@@ -4,23 +4,22 @@ import java.io.Serializable;
 
 public class Message implements Serializable {
     private static final long serialVersionUID = 1L;
+    public String sender;
     Type mType;
 
     enum Type {
         Connect,
         Initiate
     }
-
 }
 
 class Connect extends Message {
     private static final long serialVersionUID = 1L;
     private int level;
-    private String sender;
 
     Connect(int level, String sender) {
         this.level = level;
-        this.sender = sender;
+        super.sender = sender;
         super.mType = Type.Connect;
     }
 
@@ -28,7 +27,30 @@ class Connect extends Message {
         return level;
     }
 
-    public String getSender() {
-        return sender;
+}
+
+class Initiate extends Message {
+    private static final long serialVersionUID = 1L;
+    private int level;
+    private int fragmentName;
+    private State state;
+
+    Initiate(int level, int name, State state) {
+        this.level = level;
+        this.fragmentName = name;
+        this.state = state;
+        super.mType = Type.Initiate;
+    }
+
+    public int getLevel() {
+        return level;
+    }
+
+    public int getFragmentName() {
+        return fragmentName;
+    }
+
+    public State getState() {
+        return state;
     }
 }

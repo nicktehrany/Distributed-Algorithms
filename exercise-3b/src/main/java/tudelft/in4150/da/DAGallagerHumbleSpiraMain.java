@@ -65,6 +65,7 @@ public final class DAGallagerHumbleSpiraMain {
         }
 
         parseConf();
+
         //TODO TEMP
         localProcesses[0].initiate();
 

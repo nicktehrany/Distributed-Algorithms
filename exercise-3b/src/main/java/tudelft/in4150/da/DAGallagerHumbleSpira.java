@@ -8,6 +8,8 @@ import java.rmi.registry.Registry;
 import java.rmi.server.ExportException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.concurrent.ExecutorService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -22,14 +24,10 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
     private String rmiBind = "rmi:://";
     private ArrayList<Edge> adjNodes;
     private State state;
-    private Integer level = 0;
-    private Integer findCount = 0;
-
-    enum State {
-        sleeping,
-        find,
-        found
-    }
+    private int level = 0;
+    private int findCount = 0;
+    private Queue<Message> messageQueue;
+    private int fragmentName = 0;
 
     /**
      * Constructor method to bind process to the rmi registry on provided port and
@@ -60,6 +58,7 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
         this.executor = executor;
         adjNodes = new ArrayList<Edge>();
         state = State.sleeping;
+        messageQueue = new LinkedList<Message>();
     }
 
     /**
@@ -85,7 +84,7 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
         }
     }
 
-    public void createEdge(String node, Integer weight) {
+    public void createEdge(String node, int weight) {
         adjNodes.add(new Edge(node, weight));
         LOGGER.debug("created edge for " + rmiBind + " to " + node + " " + weight);
     }
@@ -109,19 +108,22 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
     }
 
     /**
-     * Wake up a process to start looking for its MOE.
+     * Wake up a process to start looking for its MOE by sending connect message to min edge.
      */
     public void wakeup() {
         LOGGER.info("Waking up " + rmiBind);
         Edge minEdge = getMinEdge();
         minEdge.state = Edge.adjState.in_MST;
         state = State.found;
+        send(new Connect(0, rmiBind), minEdge.getNode());
+    }
 
+    private void send(Message message, String receiver) {
         try {
             Registry registry = LocateRegistry.getRegistry(ip, port);
-            DAGallagerHumbleSpiraRMI stub = (DAGallagerHumbleSpiraRMI) registry.lookup(minEdge.getNode());
-            LOGGER.info("Sending connect to " + minEdge.getNode());
-            stub.receive(new Connect(0, rmiBind));
+            DAGallagerHumbleSpiraRMI stub = (DAGallagerHumbleSpiraRMI) registry.lookup(receiver);
+            LOGGER.info(rmiBind + " sending " + message.mType + " message to " + receiver);
+            stub.receive(message);
         } catch (RemoteException e) {
             LOGGER.error("Remote Exception");
             e.printStackTrace();
@@ -152,19 +154,18 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
             wakeup();
         }
         
-        Edge j = findEdge(message.getSender());
+        Edge j = findEdge(message.sender);
         if (level < this.level) {
-            // TODO send initiate
-
+            findEdge(message.sender).state = Edge.adjState.in_MST; // ? Did sender also do this?
+            send(new Initiate(this.level, fragmentName, state), message.sender);
             if (state == State.find) {
                 findCount++;
             }
         } else {
             if (j.state == Edge.adjState.Q_in_MST) {
-                // TODO append message to queue
+                messageQueue.add(message);
             } else {
-                // TODO send initiate
-                LOGGER.info("Initiate from " + rmiBind);
+                send(new Initiate(this.level + 1, findEdge(message.sender).getWeight(), State.find), message.sender);
             }
         }
     }
