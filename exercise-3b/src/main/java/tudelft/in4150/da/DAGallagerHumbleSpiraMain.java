@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.rmi.RemoteException;
+import java.util.Random;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -15,7 +17,7 @@ public final class DAGallagerHumbleSpiraMain {
     private static String ip = "localhost"; // Default ip of localhost
     private static String conffile = "/default.cfg";
     private static Process[] localProcesses;
-    private static final int WAIT = 0; // TODO 10000;
+    private static final int WAIT = 10000;
 
     private DAGallagerHumbleSpiraMain() {
     }
@@ -66,8 +68,9 @@ public final class DAGallagerHumbleSpiraMain {
 
         parseConf();
 
-        //TODO TEMP
-        localProcesses[0].initiate();
+        Random rand = new Random(System.currentTimeMillis());
+        int index = Math.abs(rand.nextInt()) % numProcesses;
+        localProcesses[index].initiate();
 
         // for (Process p : localProcesses) {
         //     p.terminate();
