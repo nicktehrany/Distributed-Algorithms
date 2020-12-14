@@ -71,7 +71,7 @@ public final class DAGallagerHumbleSpiraMain {
         Random rand = new Random(System.currentTimeMillis());
         int index = Math.abs(rand.nextInt()) % numProcesses;
         localProcesses[0].initiate();
-        localProcesses[4].initiate();
+        //localProcesses[4].initiate();
 
         // TODO: How to terminate once done?
         // for (Process p : localProcesses) {

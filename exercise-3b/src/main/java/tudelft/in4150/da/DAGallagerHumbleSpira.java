@@ -28,7 +28,7 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
     private ArrayList<Edge> adjNodes;
     private State state;
     private int level = 0;
-    private int findCount = 0;
+    private int findCount = Integer.MAX_VALUE;
     private Queue<Message> messageQueue;
     private int fragmentName;
     private Edge inBranch;
@@ -132,6 +132,7 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
         Edge minEdge = getMinEdge(adjNodes);
         minEdge.setState(Edgestate.in_MST);
         state = State.found;
+        findCount = 0;
         send(new Connect(0, rmiBind), minEdge.getNode());
     }
 
@@ -261,11 +262,10 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
         bestEdge = new Edge(null, Integer.MAX_VALUE); // Max int value used as infinity
         for (Edge e : adjNodes) {
             if (e.getWeight() != edge.getWeight() && e.getState() == Edgestate.in_MST) {
-                send(new Initiate(message.getLevel(), findEdge(message.sender).getWeight(), message.getState(),
-                    rmiBind), e.getNode());
-            }
-            if (state == State.find) {
-                findCount++;
+                send(new Initiate(message.getLevel(), edge.getWeight(), message.getState(), rmiBind), e.getNode());
+                if (message.getState() == State.find) {
+                    findCount++;
+                }
             }
         }
         if (state == State.find) {
