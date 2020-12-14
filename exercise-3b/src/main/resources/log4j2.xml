@@ -1,12 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="WARN">
+    <CustomLevels>
+        <CustomLevel name="SEND" intLevel="340"/>
+        <CustomLevel name="RECEIVE" intLevel="350"/>
+        <CustomLevel name="OPERATION" intLevel="360"/>
+    </CustomLevels>
     <Appenders>
     <Console name="Console" target="SYSTEM_OUT">
-        <PatternLayout pattern="%d{HH:mm:ss.SSS} [%c{1}] - %highlight{%marker}{INFO=green bright, TRACE=bright blue, WARN=bright yellow} %msg%n"/>
+        <PatternLayout pattern="%d{HH:mm:ss.SSS} [%c{1}] - %highlight{%marker}{OPERATION=green bright, RECEIVE=bright blue, SEND=bright yellow} %msg%n"/>
     </Console>
     </Appenders>
     <Loggers>
-    <Root level="trace">
+    <Root level="info">
         <AppenderRef ref="Console"/>
     </Root>
     </Loggers>

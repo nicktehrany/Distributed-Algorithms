@@ -12,6 +12,8 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
+
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.MarkerManager;
@@ -145,7 +147,8 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
         try {
             Registry registry = LocateRegistry.getRegistry(ip, port);
             DAGallagerHumbleSpiraRMI stub = (DAGallagerHumbleSpiraRMI) registry.lookup(receiver);
-            LOGGER.warn(MarkerManager.getMarker(message.mType + " sent"), "from " + rmiBind + " to " + receiver);
+            LOGGER.log(Level.forName("SEND", 340), MarkerManager.getMarker(message.mType + " sent"), "from " + rmiBind
+                + " to " + receiver);
             stub.receive(message);
         } catch (RemoteException e) {
             LOGGER.error("Remote Exception");
@@ -160,7 +163,8 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
      * @param message
      */
     public void receive(Message message) throws RemoteException {
-        LOGGER.trace(MarkerManager.getMarker(message.mType + " received"), "by " + rmiBind);
+        LOGGER.log(Level.forName("RECEIVE", 350), MarkerManager.getMarker(message.mType + " received"), "by "
+            + rmiBind);
         executor.submit(new Runnable() {
             @Override
             public void run() {
@@ -228,9 +232,10 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
         Edge j = findEdge(message.sender);
         if (message.getLevel() < level) {
             findEdge(message.sender).setState(Edgestate.in_MST);
-            LOGGER.info(MarkerManager.getMarker("Absorb " + message.sender), "from " + rmiBind + " Fragment name: "
-                + fragmentName + " Level: " + level);
-            send(new Initiate(level, fragmentName, state, rmiBind), message.sender);
+            LOGGER.log(Level.forName("OPERATION", 360), MarkerManager.getMarker("Absorb " + message.sender), "from "
+                + rmiBind + " Fragment name: " + fragmentName + " Level: " + level);
+
+                send(new Initiate(level, fragmentName, state, rmiBind), message.sender);
             if (state == State.find) {
                 findCount++;
             }
@@ -239,9 +244,10 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
                 messageQueue.add(message);
             } else {
                 // *Note: LOGGER output shows what the fragment name and level will be after merge completed*
-                LOGGER.info(MarkerManager.getMarker("Merge " + message.sender), "with " + rmiBind + " Fragment name: "
-                    + findEdge(message.sender).getWeight() + " Level: " + (message.getLevel() + 1));
-                send(new Initiate(this.level + 1, findEdge(message.sender).getWeight(), State.find, rmiBind),
+                LOGGER.log(Level.forName("OPERATION", 360), MarkerManager.getMarker("Merge " + message.sender),
+                    "with " + rmiBind + " Fragment name: " + j.getWeight() + " Level: " + (message.getLevel() + 1));
+
+                send(new Initiate(this.level + 1, j.getWeight(), State.find, rmiBind),
                     message.sender);
             }
         }
