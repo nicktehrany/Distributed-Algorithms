@@ -18,7 +18,7 @@ import org.apache.logging.log4j.Logger;
 public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGallagerHumbleSpiraRMI {
     private static final long serialVersionUID = 1L;
     private static final Logger LOGGER = LogManager.getLogger(DAGallagerHumbleSpira.class);
-    private static final int DELAY = 200;
+    private static final int DELAY = 300;
     private int pid;
     private int port;
     private String ip;
@@ -151,7 +151,7 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
                 handleMessage(message);
             }
         });
-        checkQueue();
+        checkQueue(); // ? NOT SURE IF THIS IS CORRECT PLACE TO DO IT?
     }
     
     private void addDelay() {
@@ -189,16 +189,14 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
             @Override
             public void run() {
                 addDelay();
-                // Check the queue if older messages can be accepted
+                // Check the queue if older messages can be accepted, if not they'll be queued again.
                 int size = messageQueue.size();
                 for (int i = 0; i < size; i++) {
-                    Message m = messageQueue.poll(); // ? NOT SURE IF THIS IS CORRECT PLACE TO DO IT?
+                    Message m = messageQueue.remove();
                     handleMessage(m);
                 }
             }
-        });
-
-        
+        });   
     }    
 
     private void handleConnect(Connect message) {
@@ -300,7 +298,8 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
             } else {
                 if (message.getWeight() > bestEdge.getWeight()) {
                     changeRoot();
-                } else if (message.getWeight() == bestEdge.getWeight() && message.getWeight() == -1) {
+                } else if (message.getWeight() == bestEdge.getWeight() && message.getWeight() == 2147483647) {
+                    LOGGER.info("HALT");
                     // ?HALT?
                 }
             }
@@ -313,13 +312,14 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
 
     private void test() {
         ArrayList<Edge> edges = getEdgesInQMST();
-        if (!edges.isEmpty()) {
+        while (!edges.isEmpty()) { // ? CORRECT ?
             testEdge = getMinEdge(edges);
             send(new Test(level, fragmentName, rmiBind), testEdge.getNode());
-        } else {
-            testEdge = null;
-            report();
+            edges.remove(testEdge);
         }
+        testEdge = null;
+        report();
+        
     }
 
     private void report() {
