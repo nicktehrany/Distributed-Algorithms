@@ -3,12 +3,12 @@ package tudelft.in4150.da;
 public class Edge {
     private String node;
     private Integer weight;
-    private adjState state;
+    private Edgestate state;
 
     public Edge(String name, Integer weight) {
         node = name;
         this.weight = weight;
-        state = adjState.Q_in_MST;
+        state = Edgestate.Q_in_MST;
     }
 
     public String getNode() {
@@ -19,11 +19,11 @@ public class Edge {
         return weight;
     }
 
-    public adjState getState() {
+    public Edgestate getState() {
         return state;
     }
 
-    public void setState(adjState state) {
+    public void setState(Edgestate state) {
         this.state = state;
     }
 }
