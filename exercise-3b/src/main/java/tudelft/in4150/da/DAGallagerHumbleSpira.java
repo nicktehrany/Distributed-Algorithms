@@ -38,7 +38,7 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
     /**
      * Constructor method to bind process to the rmi registry on provided port and
      * ip.
-     * 
+     *
      * @param ip
      * @param port
      * @param executor
@@ -90,11 +90,22 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
         }
     }
 
+    /**
+     * Create an adjacent edge for the process.
+     * @param node
+     * @param weight
+     */
     public void createEdge(String node, int weight) {
         adjNodes.add(new Edge(node, weight));
         LOGGER.debug("created edge for " + rmiBind + " to " + node + " " + weight);
     }
 
+    /**
+     * Helper function when creating edges, to check if a node exists.
+     * @param name
+     * @param p
+     * @return if node exists
+     */
     public static boolean nodeExists(String name, int p) {
         boolean found = false;
 
@@ -124,6 +135,11 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
         send(new Connect(0, rmiBind), minEdge.getNode());
     }
 
+    /**
+     * Helper function to retireve a process' stub and send a message.
+     * @param message
+     * @param receiver
+     */
     private void send(Message message, String receiver) {
         try {
             Registry registry = LocateRegistry.getRegistry(ip, port);
@@ -137,11 +153,10 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
             LOGGER.error("Unbound process exception");
         }
     }
-    
+
     /**
-     * Wrapper method to create runnable of connect message and submit to worker thread.
-     * @param level
-     * @param sender
+     * Wrapper method to create runnable of a message and submit to worker thread.
+     * @param message
      */
     public void receive(Message message) throws RemoteException {
         LOGGER.trace(MarkerManager.getMarker(message.mType + " received"), "by " + rmiBind);
@@ -161,11 +176,14 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
             }
         });
     }
-    
+
+    /**
+     * Method for adding a random delay, simulated by the thread sleeping.
+     */
     private void addDelay() {
         Random rand = new Random(System.currentTimeMillis());
         int delay = Math.abs(rand.nextInt()) % DELAY;
-        
+
         try {
             Thread.sleep(delay);
         } catch (InterruptedException e1) {
@@ -173,7 +191,11 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
             e1.printStackTrace();
         }
     }
-    
+
+    /**
+     * Wrapper method for handling the different types of messages.
+     * @param message
+     */
     private void handleMessage(Message message) {
         if (message.mType == Message.Type.Connect) {
             handleConnect((Connect) message);
@@ -192,16 +214,21 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
         }
     }
 
+    /**
+     * Handling the connect message, when a process receives a connect message, upon which it checks if it can
+     * merge or absorbe the sender.
+     * @param message
+     */
     private void handleConnect(Connect message) {
         if (state == State.sleeping) {
             wakeup();
         }
-        
+
         Edge j = findEdge(message.sender);
         if (message.getLevel() < level) {
             findEdge(message.sender).setState(Edgestate.in_MST);
-            LOGGER.info(MarkerManager.getMarker("Absorb " + message.sender), "from " + rmiBind + " Fragment name: " + fragmentName +
-                " Level: " + level);
+            LOGGER.info(MarkerManager.getMarker("Absorb " + message.sender), "from " + rmiBind + " Fragment name: "
+                + fragmentName + " Level: " + level);
             send(new Initiate(level, fragmentName, state, rmiBind), message.sender);
             if (state == State.find) {
                 findCount++;
@@ -211,19 +238,24 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
                 messageQueue.add(message);
             } else {
                 // *Note: LOGGER output shows what the fragment name and level will be after merge completed*
-                LOGGER.info(MarkerManager.getMarker("Merge " + message.sender), "with " + rmiBind + " Fragment name: " + 
-                    findEdge(message.sender).getWeight() + " Level: " + (message.getLevel() + 1));
+                LOGGER.info(MarkerManager.getMarker("Merge " + message.sender), "with " + rmiBind + " Fragment name: "
+                    + findEdge(message.sender).getWeight() + " Level: " + (message.getLevel() + 1));
                 send(new Initiate(this.level + 1, findEdge(message.sender).getWeight(), State.find, rmiBind),
                     message.sender);
             }
         }
     }
 
+    /**
+     * Handling the initiate message, when a process receives an initiate message, upon which it tries to find a
+     * MOE in its adjacent edges.
+     * @param message
+     */
     private void handleInitiate(Initiate message) {
         level = message.getLevel();
         fragmentName = message.getFragmentName();
         state = message.getState();
-        
+
         Edge edge = findEdge(message.sender);
         inBranch = edge;
         bestEdge = new Edge(null, Integer.MAX_VALUE); // Max int value used as infinity
@@ -241,6 +273,11 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
         }
     }
 
+    /**
+     * Handling the test message, when a process receives a test message, upon which it either accepts or rejects
+     * depending on its fragment level.
+     * @param message
+     */
     private void handleTest(Test message) {
         if (state == State.sleeping) {
             wakeup();
@@ -265,6 +302,11 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
         }
     }
 
+    /**
+     * Handling the accept message, when a process receives an accept message, upon which it records the sender
+     * as a potential MOE.
+     * @param message
+     */
     private void handleAccept(Accept message) {
         testEdge = null;
         Edge edge = findEdge(message.sender);
@@ -274,6 +316,11 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
         report();
     }
 
+    /**
+     * Handling the reject message, when a process receives a reject message, upon which it records the sender
+     * not being in the MST.
+     * @param message
+     */
     private void handleReject(Reject message) {
         Edge edge = findEdge(message.sender);
         if (edge.getState() == Edgestate.Q_in_MST) {
@@ -282,8 +329,13 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
         test();
     }
 
+    /**
+     * Handling the report message, when a process receives a report message it will report its knowledge about the
+     * best MOE to the core.
+     * @param message
+     */
     private void handleReport(Report message) {
-        Edge edge = findEdge(message.sender); 
+        Edge edge = findEdge(message.sender);
         if (edge.getWeight() != inBranch.getWeight()) {
             findCount--;
             if (message.getWeight() < bestEdge.getWeight()) {
@@ -296,18 +348,25 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
             } else {
                 if (message.getWeight() > bestEdge.getWeight()) {
                     changeRoot();
-                } else if (message.getWeight() == bestEdge.getWeight() && message.getWeight() == 2147483647) {
-                    LOGGER.info("HALT"); // TODO: what to do here? 
+                } else if (message.getWeight() == bestEdge.getWeight() && message.getWeight() == Integer.MAX_VALUE) {
+                    LOGGER.info("HALT"); // TODO: what to do here?
                     // ?HALT?
                 }
             }
         }
     }
 
+    /**
+     * Handling a ChangeRoot message by calling the changeRoot() method.
+     * @param message
+     */
     private void handleChangeRoot(ChangeRoot message) {
         changeRoot();
     }
 
+    /**
+     * Test method to find a potential MOE and report to the core.
+     */
     private void test() {
         ArrayList<Edge> edges = getEdgesInQMST();
         while (!edges.isEmpty()) {
@@ -317,9 +376,11 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
         }
         testEdge = null;
         report();
-        
     }
 
+    /**
+     * Report method to forward the best MOE to the core.
+     */
     private void report() {
         if (findCount == 0 && testEdge == null) {
             state = State.found;
@@ -327,6 +388,9 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
         }
     }
 
+    /**
+     * Changroot method to send a ChangeRoot message to the core and if core, connect to the MOE.
+     */
     private void changeRoot() {
         if (bestEdge.getState() == Edgestate.in_MST) {
             send(new ChangeRoot(rmiBind), bestEdge.getNode());
@@ -340,7 +404,7 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
      * Helper function that finds all edges in adjNodes that are in Q_in_MST state.
      * @return ArrayList of Edge.
      */
-    private ArrayList<Edge> getEdgesInQMST(){
+    private ArrayList<Edge> getEdgesInQMST() {
         ArrayList<Edge> edges = new ArrayList<Edge>();
         for (Edge e : adjNodes) {
             if (e.getState() == Edgestate.Q_in_MST) {
@@ -355,7 +419,7 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
      * @param node
      * @return Edge to node
      */
-    private Edge findEdge(String node){
+    private Edge findEdge(String node) {
         Edge edge = null;
         for (Edge e : adjNodes) {
             if (e.getNode().equals(node)) {
@@ -388,7 +452,11 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
         return minEdge;
     }
 
-	public int getPid() {
-		return pid;
-	}
+    /**
+     * Helper method to get a process' id.
+     * @return pid
+     */
+    public int getPid() {
+        return pid;
+    }
 }

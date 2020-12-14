@@ -29,7 +29,7 @@ public class Process {
     }
 
     /**
-     * 
+     * Initate the search for the MST from a process.
      */
     public void initiate() {
         executor.submit(new Runnable() {
@@ -56,10 +56,19 @@ public class Process {
         LOGGER.debug("Thread " + pid + " terminated");
     }
 
+    /**
+     * Assign an edge with a weight and a node to a process.
+     * @param node
+     * @param weight
+     */
     public void assignEdge(String node, Integer weight) {
         instance.createEdge(node, weight);
     }
 
+    /**
+     * Helper method to get the name of a process.
+     * @return process-id
+     */
     public String getName() {
         return "process-" + pid;
     }

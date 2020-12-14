@@ -24,7 +24,7 @@ public final class DAGallagerHumbleSpiraMain {
 
     /**
      * Says hello to the world.
-     * 
+     *
      * @param args The arguments of the program.
      */
     public static void main(String[] args) {
@@ -108,7 +108,7 @@ public final class DAGallagerHumbleSpiraMain {
                 String name = "rmi:://" + ip + "/" + p.getName();
 
                 // Self edges are ignored and checks if other node exists
-                if (name.equals(assign[0]) && !assign[0].equals(assign[2]) 
+                if (name.equals(assign[0]) && !assign[0].equals(assign[2])
                     && DAGallagerHumbleSpira.nodeExists(assign[2], port)) {
                     p.assignEdge(assign[2], weight);
                 } else if (name.equals(assign[2]) && !assign[0].equals(assign[2])
