@@ -300,7 +300,9 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
             } else {
                 Edge edge = findEdge(message.sender);
                 if (edge.getState() == Edgestate.Q_in_MST) {
-                    LOGGER.info("Edge " + edge.getWeight() + " not in MST");
+                    LOGGER.log(Level.forName("MISC", 380), MarkerManager.getMarker("Edge " + edge.getWeight()
+                        + " not in MST"), "");
+
                     edge.setState(Edgestate.not_in_MST);
                 }
                 if (testEdge.getWeight() != edge.getWeight()) {
@@ -361,8 +363,8 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
                 if (message.getWeight() > bestWeight) {
                     changeRoot();
                 } else if (message.getWeight() == bestWeight && bestWeight == Integer.MAX_VALUE) {
-                    LOGGER.info("HALT"); // TODO: at this point alg is finished, have main to cleanup by setting a var
-                    // main is constantly checking.
+                    LOGGER.log(Level.forName("RESULT", 370), MarkerManager.getMarker("Final MST Core: " + fragmentName
+                        + " Level: " + level), "");
                 }
             }
         }

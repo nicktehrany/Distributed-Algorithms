@@ -3,29 +3,52 @@
 Exercise 3B for Distributed Algorithms (IN4150), implementing the algorithm for creating minimum weight spanning trees
 in an asynchronous network.
 
-**TODO UPDATE FOR NEW SETUP AND CONF FILES**
-
 To build the .jar file, execute from the current directory,
 
 ```bash
-mvn clean package -Dmaven.test.skip=true 
+mvn clean package
 ```
 
-This will skip unit tests, which we implemented using JUnit. To run tests, remove the added flag.
-Note, to run tests in IDEs the tests still need to be compiled with the command above and the flag removed.
-
-The build will generate two .jar files in the target/ directory. One for the logging tool log4j2, which we are using
-to log information on message exchanges between processes, and a second which is the .jar of the actual program.
-To execute the generated .jar file run this for one JVM instance,
+The build will generate a .jar files in the target/ directory. To execute the generated .jar file run this for one 
+JVM instance,
 
 ```bash
-java -Djava.security.policy=java.policy -jar target/DA-Suzuki-Kasami.jar -proc=1 -reqs=2
+java -Djava.security.policy=java.policy -jar target/DA-Suzuki-Kasami.jar -proc=1
 ```
 
 There are additional parameters for specifying the port to bind to and the IP address on which to do rmi.
 All possible parameters are passed last in the command line, after specifying the .jar to execute. The parameters 
 are `-proc=` for specyfing the number of local processes (default 1) to create in this JVM instance (Note each process 
 still has its own thread runnning), `-port=` to specify the port to bind processes to and, if specified, initialize the 
-rmi on (default 1098), `-ip=` to specify the ip to bind processes to the rmi (default localhost), and lastly `-reqs=` 
-to specify the number of critical section requests to do (default 1). Requests will be isssues at random time 
-intervals.
+rmi on (default 1098), `-ip=` to specify the ip to bind processes to the rmi (default localhost), and lastly `-conf=` 
+to specify the config file for the network to construct. **NOTE** The program can be run truly distributed, but all
+machines need to have the same config file and need to be compiled with it in the resource directory.
+The default network config, which is used if no config file is provided, contains a small network with a final core 
+of name 5 and level 2.
+
+## Network Config
+
+The network is configured, by providing a list of the connected nodes and the weight the edge has with the following
+syntax,
+
+```bash
+rmi:://[ip]/process-[id] [weight] rmi:://[ip]/process-[id]
+```
+
+where `ip` is the ip that the RMI registry is on (so the one also provided in the cmd line when running the program,
+or localhost), and `weight` is the weight of the edge. Have a look at the [default.conf](https://github.com/nicktehrany/Distributed-Algorithms/blob/ex3/exercise-3b/src/main/resources/default.cfg) file. Additionaly, we proive three different networks that we have tested for the final
+report. **NOTE** When adding your own network configs, the code needs to be recompiled, as the config is used as a
+resource. This is done as follows (if your network is called mynetwork.cfg)
+
+
+```bash
+mvn clean package
+java -Djava.security.policy=java.policy -jar target/DA-Suzuki-Kasami.jar -proc=1 -conf=mynetwork.cfg
+```
+## Program
+
+The program will create however many processes specified per JVM, with each process having its own thread, and assign
+the edges of a process to that process (self edges or edges to non-existing nodes are ignored). From there, in each
+JVM a random local process (to that JVM) will initate the algorithm, and all intermediate message exchanges and 
+merges or abosrbs, as well as the final core and level will be documented. The program adds random delays before 
+processes start handling received messages and execute work.

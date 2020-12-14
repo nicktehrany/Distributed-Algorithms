@@ -68,12 +68,11 @@ public final class DAGallagerHumbleSpiraMain {
 
         parseConf();
 
+        // A random local process will initiate the algorithm.
         Random rand = new Random(System.currentTimeMillis());
         int index = Math.abs(rand.nextInt()) % numProcesses;
-        localProcesses[0].initiate();
-        //localProcesses[4].initiate();
+        localProcesses[index].initiate();
 
-        // TODO: How to terminate once done?
         // for (Process p : localProcesses) {
         //     p.terminate();
         // }

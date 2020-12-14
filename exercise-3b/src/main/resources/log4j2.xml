@@ -4,10 +4,12 @@
         <CustomLevel name="SEND" intLevel="340"/>
         <CustomLevel name="RECEIVE" intLevel="350"/>
         <CustomLevel name="OPERATION" intLevel="360"/>
+        <CustomLevel name="RESULT" intLevel="370"/>
+        <CustomLevel name="MISC" intLevel="380"/>
     </CustomLevels>
     <Appenders>
     <Console name="Console" target="SYSTEM_OUT">
-        <PatternLayout pattern="%d{HH:mm:ss.SSS} [%c{1}] - %highlight{%marker}{OPERATION=green bright, RECEIVE=bright blue, SEND=bright yellow} %msg%n"/>
+        <PatternLayout pattern="%d{HH:mm:ss.SSS} [%c{1}] - %highlight{%marker}{OPERATION=green bright, RECEIVE=bright blue, SEND=bright yellow, RESULT=bright red, Misc=bright white} %msg%n"/>
     </Console>
     </Appenders>
     <Loggers>

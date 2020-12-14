@@ -6,15 +6,11 @@ distributed systems.
 To build the .jar file, execute from the current directory,
 
 ```bash
-mvn clean package -Dmaven.test.skip=true 
+mvn clean package
 ```
 
-This will skip unit tests, which we implemented using JUnit. To run tests, remove the added flag.
-Note, to run tests in IDEs the tests still need to be compiled with the command above and the flag removed.
-
-The build will generate two .jar files in the target/ directory. One for the logging tool log4j2, which we are using
-to log information on message exchanges between processes, and a second which is the .jar of the actual program.
-To execute the generated .jar file run this for one JVM instance,
+The build will generate a .jar files in the target/ directory. To execute the generated .jar file run this for one JVM
+instance,
 
 ```bash
 java -Djava.security.policy=java.policy -jar target/DA-Suzuki-Kasami.jar -proc=1 -reqs=2

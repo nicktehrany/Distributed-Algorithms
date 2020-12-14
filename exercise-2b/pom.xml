@@ -148,7 +148,7 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
-          <skipTests>false</skipTests>
+          <skipTests>true</skipTests>
           <reuseForks>false</reuseForks>
           <runOrder>alphabetical</runOrder>
           <argLine>-Dlog4j2.configuration=error</argLine>

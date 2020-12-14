@@ -3,7 +3,6 @@ package tudelft.in4150.da;
 import java.rmi.RemoteException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -38,22 +37,6 @@ public class Process {
                 instance.wakeup();
             }
         });
-    }
-
-    /**
-     * Terminate the running thread for the process after it has completed all its pending jobs or a 10 second delay.
-     */
-    public void terminate() {
-        final int wait = 10;
-        LOGGER.debug("Terminating thread " + pid + " after pending jobs finished");
-        executor.shutdown();
-        try {
-            executor.awaitTermination(wait, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            LOGGER.debug("Interrupted Exception thread " + pid);
-            e.printStackTrace();
-        }
-        LOGGER.debug("Thread " + pid + " terminated");
     }
 
     /**
