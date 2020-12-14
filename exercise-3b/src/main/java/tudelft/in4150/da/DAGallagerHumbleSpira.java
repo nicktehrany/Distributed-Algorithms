@@ -36,6 +36,7 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
     private Edge inBranch;
     private Edge bestEdge;
     private Edge testEdge;
+    private int bestWeight;
 
     /**
      * Constructor method to bind process to the rmi registry on provided port and
@@ -247,7 +248,7 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
                 LOGGER.log(Level.forName("OPERATION", 360), MarkerManager.getMarker("Merge " + message.sender),
                     "with " + rmiBind + " Fragment name: " + j.getWeight() + " Level: " + (message.getLevel() + 1));
 
-                send(new Initiate(this.level + 1, j.getWeight(), State.find, rmiBind),
+                send(new Initiate(level + 1, j.getWeight(), State.find, rmiBind),
                     message.sender);
             }
         }
@@ -262,13 +263,16 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
         level = message.getLevel();
         fragmentName = message.getFragmentName();
         state = message.getState();
+        bestWeight = Integer.MAX_VALUE;
 
         Edge edge = findEdge(message.sender);
         inBranch = edge;
         bestEdge = new Edge(null, Integer.MAX_VALUE); // Max int value used as infinity
         for (Edge e : adjNodes) {
             if (e.getWeight() != edge.getWeight() && e.getState() == Edgestate.in_MST) {
-                send(new Initiate(message.getLevel(), edge.getWeight(), message.getState(), rmiBind), e.getNode());
+                send(new Initiate(message.getLevel(), message.getFragmentName(), message.getState(), rmiBind),
+                    e.getNode());
+
                 if (message.getState() == State.find) {
                     findCount++;
                 }
@@ -295,7 +299,7 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
                 send(new Accept(rmiBind), message.sender);
             } else {
                 Edge edge = findEdge(message.sender);
-                if (edge.getState().equals(Edgestate.Q_in_MST)) {
+                if (edge.getState() == Edgestate.Q_in_MST) {
                     LOGGER.info("Edge " + edge.getWeight() + " not in MST");
                     edge.setState(Edgestate.not_in_MST);
                 }
@@ -316,8 +320,9 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
     private void handleAccept(Accept message) {
         testEdge = null;
         Edge edge = findEdge(message.sender);
-        if (edge.getWeight() < bestEdge.getWeight()) {
+        if (edge.getWeight() < bestWeight) {
             bestEdge = edge;
+            bestWeight = edge.getWeight();
         }
         report();
     }
@@ -344,7 +349,8 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
         Edge edge = findEdge(message.sender);
         if (edge.getWeight() != inBranch.getWeight()) {
             findCount--;
-            if (message.getWeight() < bestEdge.getWeight()) {
+            if (message.getWeight() < bestWeight) {
+                bestWeight = message.getWeight();
                 bestEdge = edge;
             }
             report();
@@ -352,9 +358,9 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
             if (state == State.find) {
                 messageQueue.add(message);
             } else {
-                if (message.getWeight() > bestEdge.getWeight()) {
+                if (message.getWeight() > bestWeight) {
                     changeRoot();
-                } else if (message.getWeight() == bestEdge.getWeight() && message.getWeight() == Integer.MAX_VALUE) {
+                } else if (message.getWeight() == bestWeight && bestWeight == Integer.MAX_VALUE) {
                     LOGGER.info("HALT"); // TODO: at this point alg is finished, have main to cleanup by setting a var
                     // main is constantly checking.
                 }
@@ -390,7 +396,7 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
     private void report() {
         if (findCount == 0 && testEdge == null) {
             state = State.found;
-            send(new Report(bestEdge.getWeight(), rmiBind), inBranch.getNode());
+            send(new Report(bestWeight, rmiBind), inBranch.getNode());
         }
     }
 
