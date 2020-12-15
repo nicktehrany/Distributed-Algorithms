@@ -3,8 +3,11 @@ package tudelft.in4150.da;
 import java.rmi.RemoteException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.MarkerManager;
 
 /**
  * Process class to create processes, running the DASuzukiKasami instance.
@@ -14,6 +17,7 @@ public class Process {
     private DAGallagerHumbleSpira instance;
     private ExecutorService executor;
     private int pid;
+    private String ip;
 
     /**
      * Process constructre that creates a single threaded executor and a DASuzukiKasami instance.
@@ -25,6 +29,7 @@ public class Process {
         executor = Executors.newSingleThreadExecutor();
         instance = new DAGallagerHumbleSpira(ip, port, executor);
         pid = instance.getPid();
+        this.ip = ip;
     }
 
     /**
@@ -34,7 +39,12 @@ public class Process {
         executor.submit(new Runnable() {
             @Override
             public void run() {
-                instance.wakeup();
+                if (instance.isSleeping()) {
+                    LOGGER.log(Level.forName("MISC", 380), MarkerManager.getMarker("Initiate rmi://" + ip
+                        + "/process-" + pid), "");
+
+                        instance.wakeup();
+                }
             }
         });
     }

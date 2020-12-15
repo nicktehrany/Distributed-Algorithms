@@ -56,6 +56,7 @@ public final class DAGallagerHumbleSpiraMain {
                 e.printStackTrace();
             }
         }
+        parseConf();
 
         // Sleep 10s, waiting for other to bind to the registry before starting to initate algorithm.
         try {
@@ -66,7 +67,6 @@ public final class DAGallagerHumbleSpiraMain {
             e1.printStackTrace();
         }
 
-        parseConf();
 
         // A random local process will initiate the algorithm.
         Random rand = new Random(System.currentTimeMillis());
@@ -108,11 +108,9 @@ public final class DAGallagerHumbleSpiraMain {
                 String name = "rmi:://" + ip + "/" + p.getName();
 
                 // Self edges are ignored and checks if other node exists
-                if (name.equals(assign[0]) && !assign[0].equals(assign[2])
-                    && DAGallagerHumbleSpira.nodeExists(assign[2], port)) {
+                if (name.equals(assign[0]) && !assign[0].equals(assign[2])) {
                     p.assignEdge(assign[2], weight);
-                } else if (name.equals(assign[2]) && !assign[0].equals(assign[2])
-                    && DAGallagerHumbleSpira.nodeExists(assign[0], port)) {
+                } else if (name.equals(assign[2]) && !assign[0].equals(assign[2])) {
                     p.assignEdge(assign[0], weight);
                 }
             }

@@ -13,7 +13,7 @@ The build will generate a .jar files in the target/ directory. To execute the ge
 JVM instance,
 
 ```bash
-java -Djava.security.policy=java.policy -jar target/DA-Suzuki-Kasami.jar -proc=1
+java -Djava.security.policy=java.policy -jar target/DAGallagerHumbleSpira.jar -proc=1
 ```
 
 There are additional parameters for specifying the port to bind to and the IP address on which to do rmi.
@@ -23,8 +23,8 @@ still has its own thread runnning), `-port=` to specify the port to bind process
 rmi on (default 1098), `-ip=` to specify the ip to bind processes to the rmi (default localhost), and lastly `-conf=` 
 to specify the config file for the network to construct. **NOTE** The program can be run truly distributed, but all
 machines need to have the same config file and need to be compiled with it in the resource directory.
-The default network config, which is used if no config file is provided, contains a small network with a final core 
-of name 5 and level 2.
+The default network config, which is used if no config file is provided, contains a small network of 6 processes with
+a final core of name 5 and level 2, which can be run on two separete machines or JVMs with each one passing the `-proc=3`.
 
 ## Network Config
 
@@ -37,18 +37,23 @@ rmi:://[ip]/process-[id] [weight] rmi:://[ip]/process-[id]
 
 where `ip` is the ip that the RMI registry is on (so the one also provided in the cmd line when running the program,
 or localhost), and `weight` is the weight of the edge. Have a look at the [default.conf](https://github.com/nicktehrany/Distributed-Algorithms/blob/ex3/exercise-3b/src/main/resources/default.cfg) file. Additionaly, we proive three different networks that we have tested for the final
-report. **NOTE** When adding your own network configs, the code needs to be recompiled, as the config is used as a
+report. The number of processes speciefied in the network config can distributed over different machines however desired,
+but the total number of processes over all machines has to be equal to the number of processes in the network config.
+**NOTE** When adding your own network configs, the code needs to be recompiled, as the config is used as a
 resource. This is done as follows (if your network is called mynetwork.cfg)
 
 
 ```bash
 mvn clean package
-java -Djava.security.policy=java.policy -jar target/DA-Suzuki-Kasami.jar -proc=1 -conf=mynetwork.cfg
+java -Djava.security.policy=java.policy -jar target/DAGallagerHumbleSpira.jar -proc=1 -conf=mynetwork.cfg
 ```
 ## Program
 
-The program will create however many processes specified per JVM, with each process having its own thread, and assign
-the edges of a process to that process (self edges or edges to non-existing nodes are ignored). From there, in each
+The program will create however many processes specified per JVM, with each process having its own thread, assign
+the edges of a process to that process (self edges are ignored), and wait for 10 secomds
+for other remote processes to bind to the registry (**NOTE** if a porcess not specified in the network config id not 
+created within the first 10 seconds, it will be missing in the network, possibly making it two unconnected networks,
+which will cause RemoteException), so it's important to start the correct number of processes in time. From there, in each
 JVM a random local process (to that JVM) will initate the algorithm, and all intermediate message exchanges and 
 merges or abosrbs, as well as the final core and level will be documented. The program adds random delays before 
 processes start handling received messages and execute work.

@@ -28,9 +28,9 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
     private ExecutorService executor;
     private String rmiBind = "rmi:://";
     private ArrayList<Edge> adjNodes;
-    private State state;
+    private State state = State.sleeping;
     private int level = 0;
-    private int findCount = Integer.MAX_VALUE;
+    private int findCount;
     private Queue<Message> messageQueue;
     private int fragmentName;
     private Edge inBranch;
@@ -104,30 +104,6 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
     }
 
     /**
-     * Helper function when creating edges, to check if a node exists.
-     * @param name
-     * @param p
-     * @return if node exists
-     */
-    public static boolean nodeExists(String name, int p) {
-        boolean found = false;
-
-        try {
-            String[] registeredProcesses = LocateRegistry.getRegistry(p).list();
-            for (String node : registeredProcesses) {
-                if (name.equals(node)) {
-                    found = true;
-                    break;
-                }
-            }
-        } catch (RemoteException e) {
-            LOGGER.error("Remote Exception");
-        }
-
-        return found;
-    }
-
-    /**
      * Wake up a process to start looking for its MOE by sending connect message to min edge.
      */
     public void wakeup() {
@@ -176,7 +152,7 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
                 // Check the queue if older messages can be accepted, if not they'll be queued again.
                 int size = messageQueue.size();
                 for (int i = 0; i < size; i++) {
-                    Message m = messageQueue.remove();
+                    Message m = messageQueue.poll();
                     handleMessage(m);
                 }
             }
@@ -472,5 +448,13 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
      */
     public int getPid() {
         return pid;
+    }
+
+    /**
+     * Method to check if a process is sleeping.
+     * @return boolean if state is sleeping
+     */
+    public boolean isSleeping() {
+        return state == State.sleeping;
     }
 }
