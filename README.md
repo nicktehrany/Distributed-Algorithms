@@ -13,6 +13,5 @@ Algorithm for mututal exclusion in distributed systems.
 Algorithm for creating minimum weight spanning trees in an asynchronous network.
 # Build
 
-We are utilizing maven as project manegement tool and JUnit for unit testing. Each exercise contains some unit tests, 
-ranging from very simple to more advanced setups. Build instructions for each exercise are in their respective 
-directory.
+We are utilizing maven as project manegement tool and exercise 1 uses JUnit for unit testing. Build instructions for
+each exercise are in their respective directory.
