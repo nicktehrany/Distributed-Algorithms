@@ -3,6 +3,7 @@ package tudelft.in4150.da;
 import java.rmi.RemoteException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -50,6 +51,22 @@ public class Process {
     }
 
     /**
+     * Terminate the running thread for the process after it has completed all its pending jobs or a 10 second delay.
+     */
+    public void terminate() {
+        final int wait = 10;
+        LOGGER.debug("Terminating thread " + pid + " after pending jobs finished");
+        executor.shutdown();
+        try {
+            executor.awaitTermination(wait, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            LOGGER.debug("Interrupted Exception thread " + pid);
+            e.printStackTrace();
+        }
+        LOGGER.debug("Thread " + pid + " terminated");
+    }
+
+    /**
      * Assign an edge with a weight and a node to a process.
      * @param node
      * @param weight
@@ -64,5 +81,21 @@ public class Process {
      */
     public String getName() {
         return "process-" + pid;
+    }
+
+    /**
+     * Check if the process has finished the algorithm.
+     * @return boolean if finished
+     */
+    public boolean finished() {
+        return instance.isFinished();
+    }
+
+    /**
+     * Get the final MST formatted as a string.
+     * @return String of final MST core and level
+     */
+    public String getFinalMST() {
+        return instance.getFinalCore() + " Level: " + instance.getFinalLevel();
     }
 }

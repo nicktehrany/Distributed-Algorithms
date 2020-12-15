@@ -22,6 +22,7 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
     private static final long serialVersionUID = 1L;
     private static final Logger LOGGER = LogManager.getLogger(DAGallagerHumbleSpira.class);
     private static final int DELAY = 300;
+    private boolean finished = false;
     private int pid;
     private int port;
     private String ip;
@@ -193,6 +194,8 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
             handleReport((Report) message);
         } else if (message.mType == Message.Type.ChangeRoot) {
             handleChangeRoot((ChangeRoot) message);
+        } else if (message.mType == Message.Type.Finished) {
+            finished = true;
         }
     }
 
@@ -339,8 +342,22 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
                 if (message.getWeight() > bestWeight) {
                     changeRoot();
                 } else if (message.getWeight() == bestWeight && bestWeight == Integer.MAX_VALUE) {
-                    LOGGER.log(Level.forName("RESULT", 370), MarkerManager.getMarker("Final MST Core: " + fragmentName
-                        + " Level: " + level), "");
+                    finished = true;
+
+                    // Broadcast a finished to all processes
+                    try {
+                        Registry registry = LocateRegistry.getRegistry(ip, port);
+                        String[] registeredProcesses = registry.list();
+                        for (String process : registeredProcesses) {
+                            DAGallagerHumbleSpiraRMI stub = (DAGallagerHumbleSpiraRMI) registry.lookup(process);
+                            stub.receive(new Finished());
+                        }
+                    } catch (RemoteException e) {
+                        LOGGER.error("Remote Exception");
+                        e.printStackTrace();
+                    } catch (NotBoundException e) {
+                        LOGGER.error("Unbound process exception");
+                    }
                 }
             }
         }
@@ -456,5 +473,29 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
      */
     public boolean isSleeping() {
         return state == State.sleeping;
+    }
+
+    /**
+     * Check if the algorithm has finished execution of finding the MST.
+     * @return boolean if finished
+     */
+    public boolean isFinished() {
+        return finished;
+    }
+
+    /**
+     * Get the final core of the MST.
+     * @return core of final MST
+     */
+    public int getFinalCore() {
+        return fragmentName;
+    }
+
+    /**
+     * Get the level of the final MST.
+     * @return level of final MST
+     */
+    public int getFinalLevel() {
+        return level;
     }
 }

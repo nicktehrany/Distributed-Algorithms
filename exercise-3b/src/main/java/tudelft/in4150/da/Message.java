@@ -17,7 +17,8 @@ public class Message implements Serializable {
         Report,
         Accept,
         Reject,
-        ChangeRoot
+        ChangeRoot,
+        Finished
     }
 }
 
@@ -208,5 +209,19 @@ class ChangeRoot extends Message {
     ChangeRoot(String sender) {
         super.mType = Type.ChangeRoot;
         super.sender = sender;
+    }
+}
+
+/**
+ * Finished message is not part of the algorithm but only to broadcast a message once done to cleanup and terminate.
+ */
+class Finished extends Message {
+    private static final long serialVersionUID = 1L;
+
+    /**
+     * Finished message constructor.
+     */
+    Finished() {
+        super.mType = Type.Finished;
     }
 }

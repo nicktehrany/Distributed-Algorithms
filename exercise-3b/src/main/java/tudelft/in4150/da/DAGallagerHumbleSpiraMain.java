@@ -9,6 +9,8 @@ import java.util.Random;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.MarkerManager;
 
 public final class DAGallagerHumbleSpiraMain {
     private static final Logger LOGGER = LogManager.getLogger(DAGallagerHumbleSpira.class);
@@ -18,6 +20,7 @@ public final class DAGallagerHumbleSpiraMain {
     private static String conffile = "/default.cfg";
     private static Process[] localProcesses;
     private static final int WAIT = 10000;
+    private static final int SLEEP = 1000;
 
     private DAGallagerHumbleSpiraMain() {
     }
@@ -73,10 +76,25 @@ public final class DAGallagerHumbleSpiraMain {
         int index = Math.abs(rand.nextInt()) % numProcesses;
         localProcesses[index].initiate();
 
-        // for (Process p : localProcesses) {
-        //     p.terminate();
-        // }
-        // System.exit(0);
+        // Busy wait until algorithm is finsihed
+        while (!localProcesses[0].finished()) {
+            // Sleep 1 second to not constantly check if algorithm is finished
+            try {
+                Thread.sleep(SLEEP);
+            } catch (InterruptedException e1) {
+                LOGGER.error("Interrupted Exception");
+                e1.printStackTrace();
+            }
+        }
+
+        LOGGER.log(Level.forName("RESULT", 370), MarkerManager.getMarker("Final MST Core: "
+            + localProcesses[0].getFinalMST()), "");
+
+        // Then cleanup all processes and exit.
+        for (Process p : localProcesses) {
+            p.terminate();
+        }
+        System.exit(0);
     }
 
     private static void parseConf() {

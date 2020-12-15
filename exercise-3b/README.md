@@ -57,3 +57,7 @@ which will cause RemoteException), so it's important to start the correct number
 JVM a random local process (to that JVM) will initate the algorithm, and all intermediate message exchanges and 
 merges or abosrbs, as well as the final core and level will be documented. The program adds random delays before 
 processes start handling received messages and execute work.
+
+When a process does not find a new MOE candidate, the algorithm is finished, at which point it will broadcast a
+finished message to all registered processes. This message is not part of the algorithm but only meant to cleanup all
+threads and have each machine/JVM log the final MST result once, after which the program terminates.
