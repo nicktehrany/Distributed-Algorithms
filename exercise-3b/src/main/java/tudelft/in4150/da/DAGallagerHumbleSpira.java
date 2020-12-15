@@ -125,8 +125,11 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
         try {
             Registry registry = LocateRegistry.getRegistry(ip, port);
             DAGallagerHumbleSpiraRMI stub = (DAGallagerHumbleSpiraRMI) registry.lookup(receiver);
-            LOGGER.log(Level.forName("SEND", 340), MarkerManager.getMarker(message.mType + " sent"), "from " + rmiBind
-                + " to " + receiver);
+            if (message.mType != Message.Type.Finished) {
+                LOGGER.log(Level.forName("SEND", 340), MarkerManager.getMarker(message.mType + " sent"), "from "
+                    + rmiBind + " to " + receiver);
+            }
+
             stub.receive(message);
         } catch (RemoteException e) {
             LOGGER.error("Remote Exception");
@@ -141,8 +144,10 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
      * @param message
      */
     public void receive(Message message) throws RemoteException {
-        LOGGER.log(Level.forName("RECEIVE", 350), MarkerManager.getMarker(message.mType + " received"), "by "
-            + rmiBind);
+        if (message.mType != Message.Type.Finished) {
+            LOGGER.log(Level.forName("RECEIVE", 350), MarkerManager.getMarker(message.mType + " received"), "by "
+                + rmiBind);
+        }
         executor.submit(new Runnable() {
             @Override
             public void run() {
@@ -349,14 +354,11 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
                         Registry registry = LocateRegistry.getRegistry(ip, port);
                         String[] registeredProcesses = registry.list();
                         for (String process : registeredProcesses) {
-                            DAGallagerHumbleSpiraRMI stub = (DAGallagerHumbleSpiraRMI) registry.lookup(process);
-                            stub.receive(new Finished());
+                            send(new Finished(), process);
                         }
                     } catch (RemoteException e) {
                         LOGGER.error("Remote Exception");
                         e.printStackTrace();
-                    } catch (NotBoundException e) {
-                        LOGGER.error("Unbound process exception");
                     }
                 }
             }
