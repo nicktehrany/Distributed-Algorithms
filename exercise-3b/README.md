@@ -40,7 +40,8 @@ or localhost), and `weight` is the weight of the edge. Have a look at the [defau
 report. The number of processes speciefied in the network config can distributed over different machines however desired,
 but the total number of processes over all machines has to be equal to the number of processes in the network config.
 **NOTE** When adding your own network configs, the code needs to be recompiled, as the config is used as a
-resource. This is done as follows (if your network is called mynetwork.cfg)
+resource, and weights need to be unique for achieving determinism with this algoirithm. This is done as follows 
+(if your network is called mynetwork.cfg)
 
 
 ```bash
@@ -61,3 +62,12 @@ processes start handling received messages and execute work.
 When a process does not find a new MOE candidate, the algorithm is finished, at which point it will broadcast a
 finished message to all registered processes. This message is not part of the algorithm but only meant to cleanup all
 threads and have each machine/JVM log the final MST result once, after which the program terminates.
+
+## Networks
+
+1. The default network ([default.cfg](https://github.com/nicktehrany/Distributed-Algorithms/blob/ex3/exercise-3b/src/main/resources/default.cfg))
+has 6 nodes in total, and a final MST core edge with edge weight 5 and a final level 2 (2 merges and 1 absorb) 
+without edge with weight 6.  
+![default network](images/default.png "default network")
+
+2. 
