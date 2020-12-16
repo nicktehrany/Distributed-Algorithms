@@ -189,6 +189,7 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
     /**
      * Wrapper method for handling the different types of messages.
      * @param message
+     * @return boolean if successful or queued message
      */
     private boolean handleMessage(Message message) {
         boolean handleSuceeded = true;
@@ -217,6 +218,7 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
      * Handling the connect message, when a process receives a connect message, upon which it checks if it can
      * merge or absorbe the sender.
      * @param message
+     * @return boolean if successful or queued message
      */
     private boolean handleConnect(Connect message) {
         boolean handleSuceeded = true;
@@ -227,7 +229,7 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
 
         Edge j = findEdge(message.sender);
         if (message.getLevel() < level) {
-            findEdge(message.sender).setState(Edgestate.in_MST);
+            j.setState(Edgestate.in_MST);
             LOGGER.log(Level.forName("OPERATION", 360), MarkerManager.getMarker("Absorb " + message.sender), "from "
                 + rmiBind + " Fragment name: " + fragmentName + " Level: " + level);
 
@@ -256,6 +258,7 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
      * Handling the initiate message, when a process receives an initiate message, upon which it tries to find a
      * MOE in its adjacent edges.
      * @param message
+     * @return boolean if successful or queued message
      */
     private boolean handleInitiate(Initiate message) {
         level = message.getLevel();
@@ -288,6 +291,7 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
      * Handling the test message, when a process receives a test message, upon which it either accepts or rejects
      * depending on its fragment level.
      * @param message
+     * @return boolean if successful or queued message
      */
     private boolean handleTest(Test message) {
         boolean handleSuceeded = true;
@@ -309,7 +313,7 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
 
                     edge.setState(Edgestate.not_in_MST);
                 }
-                if (testEdge.getWeight() != edge.getWeight()) {
+                if (testEdge == null || testEdge.getWeight() != edge.getWeight()) {
                     send(new Reject(rmiBind), message.sender);
                 } else {
                     test();
@@ -324,6 +328,7 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
      * Handling the accept message, when a process receives an accept message, upon which it records the sender
      * as a potential MOE.
      * @param message
+     * @return boolean if successful or queued message
      */
     private boolean handleAccept(Accept message) {
         testEdge = null;
@@ -341,6 +346,7 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
      * Handling the reject message, when a process receives a reject message, upon which it records the sender
      * not being in the MST.
      * @param message
+     * @return boolean if successful or queued message
      */
     private boolean handleReject(Reject message) {
         Edge edge = findEdge(message.sender);
@@ -356,6 +362,7 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
      * Handling the report message, when a process receives a report message it will report its knowledge about the
      * best MOE to the core.
      * @param message
+     * @return boolean if successful or queued message
      */
     private boolean handleReport(Report message) {
         boolean handleSuceeded = true;
@@ -399,6 +406,7 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
     /**
      * Handling a ChangeRoot message by calling the changeRoot() method.
      * @param message
+     * @return boolean if successful or queued message
      */
     private boolean handleChangeRoot(ChangeRoot message) {
         changeRoot();
