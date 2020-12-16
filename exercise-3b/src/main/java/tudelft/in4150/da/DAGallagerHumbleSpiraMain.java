@@ -51,7 +51,7 @@ public final class DAGallagerHumbleSpiraMain {
 
         // Create all local processes.
         localProcesses = new Process[numProcesses];
-        for (int i = 0; i < localProcesses.length; i++) {
+        for (int i = 0; i < numProcesses; i++) {
             try {
                 localProcesses[i] = new Process(ip, port);
             } catch (RemoteException e) {
@@ -102,6 +102,9 @@ public final class DAGallagerHumbleSpiraMain {
         if (in == null) {
             LOGGER.error("File " + conffile.replaceFirst("/", "") + " not found");
             System.exit(1);
+        } else {
+            LOGGER.log(Level.forName("MISC", 380), MarkerManager.getMarker("Using conf file "
+                + conffile.replaceFirst("/", "")), "");
         }
 
         InputStreamReader streamReader = new InputStreamReader(in);

@@ -111,6 +111,7 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
         LOGGER.debug("Waking up " + rmiBind);
         Edge minEdge = getMinEdge(adjNodes);
         minEdge.setState(Edgestate.in_MST);
+        level = 0;
         state = State.found;
         findCount = 0;
         send(new Connect(0, rmiBind), minEdge.getNode());
@@ -152,14 +153,19 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
             @Override
             public void run() {
                 addDelay();
-                handleMessage(message);
+                if (handleMessage(message)) {
 
-                addDelay();
-                // Check the queue if older messages can be accepted, if not they'll be queued again.
-                int size = messageQueue.size();
-                for (int i = 0; i < size; i++) {
-                    Message m = messageQueue.poll();
-                    handleMessage(m);
+                    // Check the queue if older messages can be accepted, if not they'll be queued again.
+                    int size = messageQueue.size();
+                    for (int i = 0; i < size; i++) {
+                        Message m = messageQueue.poll();
+
+                        // If message successfuly handled, check queue from beginning
+                        if (handleMessage(m)) {
+                            i = -1;
+                            size = messageQueue.size();
+                        }
+                    }
                 }
             }
         });
@@ -184,24 +190,27 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
      * Wrapper method for handling the different types of messages.
      * @param message
      */
-    private void handleMessage(Message message) {
+    private boolean handleMessage(Message message) {
+        boolean handleSuceeded = true;
         if (message.mType == Message.Type.Connect) {
-            handleConnect((Connect) message);
+            handleSuceeded = handleConnect((Connect) message);
         } else if (message.mType == Message.Type.Initiate) {
-            handleInitiate((Initiate) message);
+            handleSuceeded = handleInitiate((Initiate) message);
         } else if (message.mType == Message.Type.Test) {
-            handleTest((Test) message);
+            handleSuceeded = handleTest((Test) message);
         } else if (message.mType == Message.Type.Accept) {
-            handleAccept((Accept) message);
+            handleSuceeded = handleAccept((Accept) message);
         } else if (message.mType == Message.Type.Reject) {
-            handleReject((Reject) message);
+            handleSuceeded = handleReject((Reject) message);
         } else if (message.mType == Message.Type.Report) {
-            handleReport((Report) message);
+            handleSuceeded = handleReport((Report) message);
         } else if (message.mType == Message.Type.ChangeRoot) {
-            handleChangeRoot((ChangeRoot) message);
+            handleSuceeded = handleChangeRoot((ChangeRoot) message);
         } else if (message.mType == Message.Type.Finished) {
             finished = true;
         }
+
+        return handleSuceeded;
     }
 
     /**
@@ -209,7 +218,9 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
      * merge or absorbe the sender.
      * @param message
      */
-    private void handleConnect(Connect message) {
+    private boolean handleConnect(Connect message) {
+        boolean handleSuceeded = true;
+
         if (state == State.sleeping) {
             wakeup();
         }
@@ -227,6 +238,7 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
         } else {
             if (j.getState() == Edgestate.Q_in_MST) {
                 messageQueue.add(message);
+                handleSuceeded = false;
             } else {
                 // *Note: LOGGER output shows what the fragment name and level will be after merge completed*
                 LOGGER.log(Level.forName("OPERATION", 360), MarkerManager.getMarker("Merge " + message.sender),
@@ -236,6 +248,8 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
                     message.sender);
             }
         }
+
+        return handleSuceeded;
     }
 
     /**
@@ -243,15 +257,16 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
      * MOE in its adjacent edges.
      * @param message
      */
-    private void handleInitiate(Initiate message) {
+    private boolean handleInitiate(Initiate message) {
         level = message.getLevel();
         fragmentName = message.getFragmentName();
         state = message.getState();
-        bestWeight = Integer.MAX_VALUE;
 
         Edge edge = findEdge(message.sender);
         inBranch = edge;
-        bestEdge = new Edge(null, Integer.MAX_VALUE); // Max int value used as infinity
+        bestEdge = null;
+        bestWeight = Integer.MAX_VALUE;
+
         for (Edge e : adjNodes) {
             if (e.getWeight() != edge.getWeight() && e.getState() == Edgestate.in_MST) {
                 send(new Initiate(message.getLevel(), message.getFragmentName(), message.getState(), rmiBind),
@@ -262,9 +277,11 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
                 }
             }
         }
-        if (state == State.find) {
+        if (message.getState() == State.find) {
             test();
         }
+
+        return true;
     }
 
     /**
@@ -272,12 +289,15 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
      * depending on its fragment level.
      * @param message
      */
-    private void handleTest(Test message) {
+    private boolean handleTest(Test message) {
+        boolean handleSuceeded = true;
+
         if (state == State.sleeping) {
             wakeup();
         }
         if (message.getLevel() > level) {
             messageQueue.add(message);
+            handleSuceeded = false;
         } else {
             if (message.getFragmentName() != fragmentName) {
                 send(new Accept(rmiBind), message.sender);
@@ -296,6 +316,8 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
                 }
             }
         }
+
+        return handleSuceeded;
     }
 
     /**
@@ -303,7 +325,7 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
      * as a potential MOE.
      * @param message
      */
-    private void handleAccept(Accept message) {
+    private boolean handleAccept(Accept message) {
         testEdge = null;
         Edge edge = findEdge(message.sender);
         if (edge.getWeight() < bestWeight) {
@@ -311,6 +333,8 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
             bestWeight = edge.getWeight();
         }
         report();
+
+        return true;
     }
 
     /**
@@ -318,12 +342,14 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
      * not being in the MST.
      * @param message
      */
-    private void handleReject(Reject message) {
+    private boolean handleReject(Reject message) {
         Edge edge = findEdge(message.sender);
         if (edge.getState() == Edgestate.Q_in_MST) {
             edge.setState(Edgestate.not_in_MST);
         }
         test();
+
+        return true;
     }
 
     /**
@@ -331,7 +357,9 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
      * best MOE to the core.
      * @param message
      */
-    private void handleReport(Report message) {
+    private boolean handleReport(Report message) {
+        boolean handleSuceeded = true;
+
         Edge edge = findEdge(message.sender);
         if (edge.getWeight() != inBranch.getWeight()) {
             findCount--;
@@ -343,6 +371,7 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
         } else {
             if (state == State.find) {
                 messageQueue.add(message);
+                handleSuceeded = false;
             } else {
                 if (message.getWeight() > bestWeight) {
                     changeRoot();
@@ -363,14 +392,18 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
                 }
             }
         }
+
+        return handleSuceeded;
     }
 
     /**
      * Handling a ChangeRoot message by calling the changeRoot() method.
      * @param message
      */
-    private void handleChangeRoot(ChangeRoot message) {
+    private boolean handleChangeRoot(ChangeRoot message) {
         changeRoot();
+
+        return true;
     }
 
     /**

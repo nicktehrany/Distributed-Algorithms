@@ -13,7 +13,7 @@ The build will generate a .jar files in the target/ directory. To execute the ge
 JVM instance,
 
 ```bash
-java -Djava.security.policy=java.policy -jar target/DAGallagerHumbleSpira.jar -proc=1
+java -Djava.security.policy=java.policy -jar target/DAGallagerHumbleSpira.jar -proc=6
 ```
 
 There are additional parameters for specifying the port to bind to and the IP address on which to do rmi.
@@ -24,7 +24,10 @@ rmi on (default 1098), `-ip=` to specify the ip to bind processes to the rmi (de
 to specify the config file for the network to construct. **NOTE** The program can be run truly distributed, but all
 machines need to have the same config file and need to be compiled with it in the resource directory.
 The default network config, which is used if no config file is provided, contains a small network of 6 processes with
-a final core of name 5 and level 2, which can be run on two separete machines or JVMs with each one passing the `-proc=3`.
+a final core of name 5 and level 2, which can be run on two separete machines or JVMs with each one passing the `-proc=3`.  
+**IMPORTANT** The total number of processes needs to be the same as the number of processes specified in the config file,
+but the processes can be split over different JVMs/machines however desired as long as they all add up to the total 
+number required.
 
 ## Network Config
 

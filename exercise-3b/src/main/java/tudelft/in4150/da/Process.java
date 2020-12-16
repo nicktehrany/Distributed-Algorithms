@@ -42,7 +42,7 @@ public class Process {
             public void run() {
                 if (instance.isSleeping()) {
                     LOGGER.log(Level.forName("MISC", 380), MarkerManager.getMarker("Initiate rmi://" + ip
-                        + "/process-" + pid), "");
+                        + "/process-" + instance.getPid()), "");
 
                         instance.wakeup();
                 }
