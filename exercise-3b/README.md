@@ -66,7 +66,7 @@ threads and have each machine/JVM log the final MST result once, after which the
 ## Networks
 
 1. The default network ([default.cfg](https://github.com/nicktehrany/Distributed-Algorithms/blob/ex3/exercise-3b/src/main/resources/default.cfg))
-has 6 nodes in total, and a final MST core edge with edge weight 5 and a final level 2 (2 merges and 1 absorb) 
+has 6 nodes in total, and a final MST core edge with edge weight 5 and a final level 2 (2 merges and 2 absorbs) 
 without edge with weight 6.  
 ![default network](images/default.png "default network")
 

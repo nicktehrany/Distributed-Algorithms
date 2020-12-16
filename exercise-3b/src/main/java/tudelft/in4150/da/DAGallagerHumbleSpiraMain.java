@@ -125,7 +125,7 @@ public final class DAGallagerHumbleSpiraMain {
             for (Process p : localProcesses) {
                 String name = "rmi:://" + ip + "/" + p.getName();
 
-                // Self edges are ignored and checks if other node exists
+                // Self edges are ignored
                 if (name.equals(assign[0]) && !assign[0].equals(assign[2])) {
                     p.assignEdge(assign[2], weight);
                 } else if (name.equals(assign[2]) && !assign[0].equals(assign[2])) {
