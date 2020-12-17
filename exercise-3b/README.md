@@ -39,7 +39,8 @@ rmi:://[ip]/process-[id] [weight] rmi:://[ip]/process-[id]
 ```
 
 where `ip` is the ip that the RMI registry is on (so the one also provided in the cmd line when running the program,
-or localhost), and `weight` is the weight of the edge. Have a look at the [default.conf](https://github.com/nicktehrany/Distributed-Algorithms/blob/ex3/exercise-3b/src/main/resources/default.cfg) file. Additionaly, we proive three different networks that we have tested for the final
+or localhost), and `weight` is the weight of the edge. Have a look at the [default.conf](src/main/resources/default.cfg) 
+file. Additionaly, we provide three different networks that we have tested for the final
 report. The number of processes speciefied in the network config can distributed over different machines however desired,
 but the total number of processes over all machines has to be equal to the number of processes in the network config.
 **NOTE** When adding your own network configs, the code needs to be recompiled, as the config is used as a
@@ -78,3 +79,8 @@ which has 16 nodes (so requires 16 processes split over all machines/JVMs), and 
 12 and a final level of 3 (7 merges and 8 absorbs) without edges with weight 14, 15, 18, 19, 20, 21, 22, 23, 24, 25, 
 26, 27, 28, 29, 30, 31, 32, 33.  
 ![complex network](images/complexNetwork.png "complex network")
+
+3. A big network ([bigNetwork.cfg](src/main/resources/bigNetwork.cfg)), similar to network 1 in that it is a circular ring, 
+but much larger with a total of 40 nodes. The final MST has a core of edge with weight 5 and a level of 2, with all 
+edges except edge with weight 41. This is mainly meant to test the correctness of large numbers of message exchanges.  
+![bigNetwork](images/bigNetwork.png "big network")
