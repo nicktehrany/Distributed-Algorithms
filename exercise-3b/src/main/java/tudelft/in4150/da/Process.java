@@ -35,19 +35,27 @@ public class Process {
 
     /**
      * Initate the search for the MST from a process.
+     * @param maxProcess
+     * @return boolean
      */
-    public void initiate() {
-        executor.submit(new Runnable() {
-            @Override
-            public void run() {
-                if (instance.isSleeping()) {
-                    LOGGER.log(Level.forName("MISC", 380), MarkerManager.getMarker("Initiate rmi://" + ip
-                        + "/process-" + instance.getPid()), "");
+    public boolean initiate(int maxProcess) {
+        boolean success = instance.checkMaxProcess(maxProcess);
 
-                        instance.wakeup();
+        if (success) {
+            executor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    if (instance.isSleeping()) {
+                        LOGGER.log(Level.forName("MISC", 380), MarkerManager.getMarker("Initiate rmi://" + ip
+                            + "/process-" + instance.getPid()), "");
+
+                            instance.wakeup();
+                    }
                 }
-            }
-        });
+            });
+        }
+
+        return success;
     }
 
     /**

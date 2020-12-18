@@ -21,6 +21,7 @@ public final class DAGallagerHumbleSpiraMain {
     private static Process[] localProcesses;
     private static final int WAIT = 10000;
     private static final int SLEEP = 1000;
+    private static int maxProcess = 0;
 
     private DAGallagerHumbleSpiraMain() {
     }
@@ -47,7 +48,7 @@ public final class DAGallagerHumbleSpiraMain {
         }
 
         // Attempt to initialize the RMI registry.
-        DAGallagerHumbleSpira.initRegistry(port);
+        boolean initSuccess = DAGallagerHumbleSpira.initRegistry(port);
 
         // Create all local processes.
         localProcesses = new Process[numProcesses];
@@ -70,25 +71,38 @@ public final class DAGallagerHumbleSpiraMain {
             e1.printStackTrace();
         }
 
-
         // A random local process will initiate the algorithm.
         Random rand = new Random(System.currentTimeMillis());
         int index = Math.abs(rand.nextInt()) % numProcesses;
-        localProcesses[index].initiate();
+        boolean success = localProcesses[index].initiate(maxProcess + 1);
 
-        // Busy wait until algorithm is finsihed
-        while (!localProcesses[0].finished()) {
-            // Sleep 1 second to not constantly check if algorithm is finished
-            try {
-                Thread.sleep(SLEEP);
-            } catch (InterruptedException e1) {
-                LOGGER.error("Interrupted Exception");
-                e1.printStackTrace();
+        if (success) {
+            // Busy wait until algorithm is finsihed
+            while (!localProcesses[index].finished()) {
+                // Sleep 1 second to not constantly check if algorithm is finished
+                try {
+                    Thread.sleep(SLEEP);
+                } catch (InterruptedException e1) {
+                    LOGGER.error("Interrupted Exception");
+                    e1.printStackTrace();
+                }
+            }
+        } else {
+            // If created RMI registry wait for other machines to fail on starting algotihm before deleting
+            // registry to avoid exceptions
+            if (initSuccess) {
+                try {
+                    LOGGER.info("Waiting for registry cleanup");
+                    Thread.sleep(WAIT);
+                } catch (InterruptedException e1) {
+                    LOGGER.error("Interrupted Exception");
+                    e1.printStackTrace();
+                }
             }
         }
 
-        LOGGER.log(Level.forName("RESULT", 370), MarkerManager.getMarker("Final MST Core: "
-            + localProcesses[0].getFinalMST()), "");
+        LOGGER.log(Level.forName("RESULT", 370),
+                MarkerManager.getMarker("Final MST Core: " + localProcesses[index].getFinalMST()), "");
 
         // Then cleanup all processes and exit.
         for (Process p : localProcesses) {
@@ -103,8 +117,8 @@ public final class DAGallagerHumbleSpiraMain {
             LOGGER.error("File " + conffile.replaceFirst("/", "") + " not found");
             System.exit(1);
         } else {
-            LOGGER.log(Level.forName("MISC", 380), MarkerManager.getMarker("Using conf file "
-                + conffile.replaceFirst("/", "")), "");
+            LOGGER.log(Level.forName("MISC", 380),
+                    MarkerManager.getMarker("Using conf file " + conffile.replaceFirst("/", "")), "");
         }
 
         InputStreamReader streamReader = new InputStreamReader(in);
@@ -127,6 +141,16 @@ public final class DAGallagerHumbleSpiraMain {
             Integer weight = Integer.parseInt(assign[1]);
             for (Process p : localProcesses) {
                 String name = "rmi:://" + ip + "/" + p.getName();
+
+                // Find the maximum process id for later checking if all processes exist
+                int process1 = Integer.parseInt(assign[0].replaceAll("\\w*\\:*\\/\\/\\w*\\/\\w*\\-", ""));
+                int process2 = Integer.parseInt(assign[2].replaceAll("\\w*\\:*\\/\\/\\w*\\/\\w*\\-", ""));
+
+                if (process1 > maxProcess) {
+                    maxProcess = process1;
+                } else if (process2 > maxProcess) {
+                    maxProcess = process2;
+                }
 
                 // Self edges are ignored
                 if (name.equals(assign[0]) && !assign[0].equals(assign[2])) {

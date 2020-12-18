@@ -33,7 +33,7 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
     private int level = 0;
     private int findCount;
     private Queue<Message> messageQueue;
-    private int fragmentName;
+    private int fragmentName = 0;
     private Edge inBranch;
     private Edge bestEdge;
     private Edge testEdge;
@@ -75,14 +75,17 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
      * Initialize the RMI registry.
      *
      * @param port Port on which RMI registry is created.
+     * @return boolean if successful
      */
-    public static void initRegistry(int port) {
+    public static boolean initRegistry(int port) {
+        boolean success = true;
 
         // Setup RMI regisrty
         try {
             java.rmi.registry.LocateRegistry.createRegistry(port);
         } catch (ExportException e) {
             LOGGER.debug("Registry already intialized");
+            success = false;
         } catch (RemoteException e) {
             LOGGER.debug("Remote Exception initializing registry");
             e.getStackTrace();
@@ -92,6 +95,8 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
         if (System.getSecurityManager() == null) {
             System.setSecurityManager(new SecurityManager());
         }
+
+        return success;
     }
 
     /**
@@ -540,5 +545,29 @@ public class DAGallagerHumbleSpira extends UnicastRemoteObject implements DAGall
      */
     public int getFinalLevel() {
         return level;
+    }
+
+    /**
+     * Check if enough processes specified in config are bounded to the registry.
+     * @param maxProcess
+     * @return boolean if successful
+     */
+    public boolean checkMaxProcess(int maxProcess) {
+        boolean success = true;
+
+        // Broadcast a finished to all processes
+        try {
+            Registry registry = LocateRegistry.getRegistry(ip, port);
+            String[] registeredProcesses = registry.list();
+            if (registeredProcesses.length < maxProcess) {
+                LOGGER.log(Level.forName("RESULT", 370), MarkerManager.getMarker("Error Not Enough Processes"),
+                    "specifed " + maxProcess + " but only " + registeredProcesses.length + " available");
+                success = false;
+            }
+        } catch (RemoteException e) {
+            LOGGER.error("Remote Exception");
+            e.printStackTrace();
+        }
+        return success;
     }
 }
